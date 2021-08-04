@@ -821,3 +821,125 @@ func %sAskUpdate(ask *sql.Tx, update map[string]interface{}, where string, args 
 	}
 	return
 }
+
+func WriteDatabaseToGoStructDefine(database, filename string) (err error) {
+	var tables []*Table
+	tables, err = Tables(database)
+	if err != nil {
+		return
+	}
+	var assoc bytes.Buffer
+	// query table.columns, assemble structure data
+	for _, t := range tables {
+		if t.TableName == nil {
+			continue
+		}
+		wt := &WriteTable{}
+		if t.TableComment != nil {
+			wt.TableComment = *t.TableComment
+		}
+		flt := strings.ToLower(*t.TableName)
+		wt.TableNamePascal = name.UnderlineToPascal(flt)
+		wt.TableNameUnderline = name.PascalToUnderline(wt.TableNamePascal)
+		assoc.WriteString(fmt.Sprintf("%s %s %s\n", wt.TableNamePascal, wt.TableNameUnderline, wt.TableComment))
+		var columns []*Column
+		columns, err = Columns(database, *t.TableName)
+		if err != nil {
+			continue
+		}
+		for _, c := range columns {
+			if c.ColumnName == nil {
+				continue
+			}
+			wc := &WriteColumn{
+				ColumnName: *c.ColumnName,
+				DateType:   "",
+			}
+			if c.ColumnComment != nil {
+				wc.ColumnComment = *c.ColumnComment
+			}
+			flc := strings.ToLower(wc.ColumnName)
+			wc.ColumnNamePascal = name.UnderlineToPascal(flc)
+			wc.ColumnNameUnderline = name.PascalToUnderline(wc.ColumnNamePascal)
+			assoc.WriteString(fmt.Sprintf("\t%s %s", wc.ColumnNamePascal, ColumnToGoType(c)))
+			assoc.WriteString("\n")
+		}
+		assoc.WriteString("\n")
+	}
+	if filename == "" {
+		filename = "column"
+	}
+	err = os.WriteFile(filename, assoc.Bytes(), 0644)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func WriteDatabaseToGoStructSet(database, filename string) (err error) {
+	var tables []*Table
+	tables, err = Tables(database)
+	if err != nil {
+		return
+	}
+	var assoc bytes.Buffer
+	// query table.columns, assemble structure data
+	for _, t := range tables {
+		if t.TableName == nil {
+			continue
+		}
+		wt := &WriteTable{}
+		if t.TableComment != nil {
+			wt.TableComment = *t.TableComment
+		}
+		flt := strings.ToLower(*t.TableName)
+		wt.TableNamePascal = name.UnderlineToPascal(flt)
+		wt.TableNameUnderline = name.PascalToUnderline(wt.TableNamePascal)
+		assoc.WriteString(fmt.Sprintf("%s %s %s\n", wt.TableNamePascal, wt.TableNameUnderline, wt.TableComment))
+		var columns []*Column
+		columns, err = Columns(database, *t.TableName)
+		if err != nil {
+			continue
+		}
+		for _, c := range columns {
+			if c.ColumnName == nil {
+				continue
+			}
+			wc := &WriteColumn{
+				ColumnName: *c.ColumnName,
+				DateType:   "",
+			}
+			if c.ColumnComment != nil {
+				wc.ColumnComment = *c.ColumnComment
+			}
+			flc := strings.ToLower(wc.ColumnName)
+			wc.ColumnNamePascal = name.UnderlineToPascal(flc)
+			wc.ColumnNameUnderline = name.PascalToUnderline(wc.ColumnNamePascal)
+			gdv := ""
+			if c.ColumnDefault == nil {
+				gdv = "nil"
+			} else {
+				gdv = strings.ToLower(fmt.Sprintf("%v", *c.ColumnDefault))
+			}
+			if gdv == "null" {
+				gdv = "nil"
+			}
+			if gdv == "" {
+				gdv = "\"\""
+			}
+			if gdv == "''" {
+				gdv = "\"\""
+			}
+			assoc.WriteString(fmt.Sprintf("\t%s: %s,\n", wc.ColumnNamePascal, gdv))
+		}
+		assoc.WriteString(fmt.Sprintf("}\n\n"))
+	}
+	if filename == "" {
+		filename = "column.map"
+	}
+	err = os.WriteFile(filename, assoc.Bytes(), 0644)
+	if err != nil {
+		return
+	}
+	return
+}

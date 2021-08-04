@@ -53,6 +53,10 @@ func main() {
 	_ = mysql.WriteDatabaseToGoColumn(dbname, bf("string"))
 	// ***.go
 	_ = mysql.WriteDatabaseQuicklyQuery(dbname, cf("go"), "db")
+	// ***.struct.define
+	_ = mysql.WriteDatabaseToGoStructDefine(dbname, bf("struct.define"))
+	// ***.struct.set
+	_ = mysql.WriteDatabaseToGoStructSet(dbname, bf("struct.set"))
 }
 
 ```
