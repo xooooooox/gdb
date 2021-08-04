@@ -1,0 +1,14 @@
+.idea
+.vscode
+*.log
+*.err
+*.exe
+*.exe*
+*.all
+*.trace
+*.debug
+*.info
+*.warn
+*.error
+*.fatal
+*.off
