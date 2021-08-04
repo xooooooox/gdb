@@ -75,23 +75,18 @@ func AskExec(tx *sql.Tx, prepare string, args ...interface{}) (rowsAffected int6
 
 // Query query (connect pool)
 func Query(fc func(rows *sql.Rows) error, prepare string, args ...interface{}) (err error) {
-	defer Log(prepare, args)
-	defer Err(err, prepare, args)
 	err = PoolQuery(pool, fc, prepare, args...)
 	return
 }
 
 // Exec execute (connect pool)
 func Exec(prepare string, args ...interface{}) (rowsAffected int64, err error) {
-	defer Log(prepare, args)
-	defer Err(err, prepare, args)
 	rowsAffected, err = PoolExec(pool, prepare, args...)
 	return
 }
 
 // Ask transaction
 func Ask(ask func(tx *sql.Tx) error) (err error) {
-	defer Err(err, "start sql transaction", []interface{}{})
-	err = database.Ask(pool, ask)
+	err = PoolAsk(pool, ask)
 	return
 }
