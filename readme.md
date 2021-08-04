@@ -15,8 +15,7 @@ func main() {
 	dbpass := "root"
 	dbhost := "127.0.0.1"
 	dbport := 3306
-	// dbname := "run"
-	dbname := "orchard"
+	dbname := "test"
 	dbcharset := "utf8mb4"
 	var db *sql.DB
 	db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s",

@@ -570,7 +570,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"orchard/db/mysql"
+	"github.com/xooooooox/gdb/mysql"
 )
 `
 	assoc.WriteString(fmt.Sprintf(tmp, pkg))
