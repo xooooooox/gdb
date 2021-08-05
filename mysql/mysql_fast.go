@@ -16,7 +16,7 @@ const (
 // Insert mysql insert map(key-value)
 func Insert(table string, insert map[string]interface{}) (rowsAffected int64, err error) {
 	if insert == nil || len(insert) == 0 {
-		err = errors.New("`insert` is empty")
+		err = errors.New("insert column information is empty")
 		return
 	}
 	var ba, bb, bc bytes.Buffer
@@ -54,7 +54,7 @@ func Delete(table string, where string, args ...interface{}) (rowsAffected int64
 // Update mysql update
 func Update(table string, update map[string]interface{}, where string, args ...interface{}) (rowsAffected int64, err error) {
 	if update == nil || len(update) == 0 {
-		err = errors.New("`update` is empty")
+		err = errors.New("update column information is empty")
 		return
 	}
 	var bb bytes.Buffer
@@ -79,11 +79,11 @@ func Update(table string, update map[string]interface{}, where string, args ...i
 // AskInsert transaction mysql insert map(key-value)
 func AskInsert(tx *sql.Tx, table string, insert map[string]interface{}) (rowsAffected int64, err error) {
 	if tx == nil {
-		err = errors.New("`tx` is nil")
+		err = errors.New("transaction connection is unavailable")
 		return
 	}
 	if insert == nil || len(insert) == 0 {
-		err = errors.New("`insert` is empty")
+		err = errors.New("insert column information is empty")
 		return
 	}
 	var ba, bb, bc bytes.Buffer
@@ -109,7 +109,7 @@ func AskInsert(tx *sql.Tx, table string, insert map[string]interface{}) (rowsAff
 // AskDelete transaction mysql delete where
 func AskDelete(tx *sql.Tx, table string, where string, args ...interface{}) (rowsAffected int64, err error) {
 	if tx == nil {
-		err = errors.New("`tx` is nil")
+		err = errors.New("transaction connection is unavailable")
 		return
 	}
 	var bb bytes.Buffer
@@ -125,11 +125,11 @@ func AskDelete(tx *sql.Tx, table string, where string, args ...interface{}) (row
 // AskUpdate transaction mysql update
 func AskUpdate(tx *sql.Tx, table string, update map[string]interface{}, where string, args ...interface{}) (rowsAffected int64, err error) {
 	if tx == nil {
-		err = errors.New("`tx` is nil")
+		err = errors.New("transaction connection is unavailable")
 		return
 	}
 	if update == nil || len(update) == 0 {
-		err = errors.New("`update` is empty")
+		err = errors.New("update column information is empty")
 		return
 	}
 	var bb bytes.Buffer

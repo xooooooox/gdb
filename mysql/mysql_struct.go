@@ -198,7 +198,6 @@ func FmtGoFile(file string) error {
 type WriteDatabase struct {
 	DatabaseName string
 	Table        []*WriteTable
-	WriteStr     []string
 }
 
 // WriteTable write table
@@ -208,7 +207,6 @@ type WriteTable struct {
 	TableNamePascal    string
 	TableNameUnderline string
 	Column             []*WriteColumn
-	WriteStr           []string
 }
 
 // WriteColumn write column
@@ -228,7 +226,7 @@ func AscMapStringString(msi map[string]string) (key []string, val []string) {
 	key = make([]string, length, length)
 	val = make([]string, length, length)
 	i := 0
-	for k, _ := range msi {
+	for k := range msi {
 		key[i] = k
 		i++
 	}
@@ -276,14 +274,13 @@ func WriteDatabaseToGoStruct(database, filename, pkg string) (err error) {
 	wd := WriteDatabase{
 		DatabaseName: database,
 		Table:        []*WriteTable{},
-		WriteStr:     []string{},
 	}
 	var bbs, ut, cs, uc bytes.Buffer
 	bbs.WriteString(fmt.Sprintf("package %s\n\n", pkg))
 	ut.WriteString(fmt.Sprintf("const (\n"))
 	cs.WriteString(fmt.Sprintf("const (\n"))
 	uc.WriteString(fmt.Sprintf("const (\n"))
-	var uniqueColumn map[string]string = map[string]string{}
+	uniqueColumn := map[string]string{}
 	// query table.columns, assemble structure data
 	for _, t := range tables {
 		if t.TableName == nil {
@@ -611,7 +608,7 @@ import (
 	if err != nil {
 		return
 	}
-	first :=
+	tmpFirst :=
 		`
 // %sFirst query the first record of where
 func %sFirst(where string, args ...interface{}) (s *%s, err error) {
@@ -634,7 +631,7 @@ func %sFirst(where string, args ...interface{}) (s *%s, err error) {
 	return
 }
 `
-	page :=
+	tmpPage :=
 		`
 // %sPage query one page record of where
 func %sPage(page int64, limit int64, where string, args ...interface{}) (ss []*%s, err error) {
@@ -659,28 +656,28 @@ func %sPage(page int64, limit int64, where string, args ...interface{}) (ss []*%
 	return
 }
 `
-	insert :=
+	tmpInsert :=
 		`
 // %sInsert execute insert one record
 func %sInsert(insert map[string]interface{}) (rowsAffected int64, err error) {
 	return mysql.Insert("%s", insert)
 }
 `
-	delete :=
+	tmpDelete :=
 		`
 // %sDelete execute delete
 func %sDelete(where string, args ...interface{}) (rowsAffected int64, err error) {
 	return mysql.Delete("%s", where, args...)
 }
 `
-	update :=
+	tmpUpdate :=
 		`
 // %sUpdate execute update
 func %sUpdate(update map[string]interface{}, where string, args ...interface{}) (rowsAffected int64, err error) {
 	return mysql.Update("%s", update, where, args...)
 }
 `
-	count :=
+	tmpCount :=
 		`
 // %sCount Count the number of eligible data
 func %sCount(where string, args ...interface{}) (count int64, err error) {
@@ -701,7 +698,7 @@ func %sCount(where string, args ...interface{}) (count int64, err error) {
 	return
 }
 `
-	sumint :=
+	tmpSumInt :=
 		`
 // %sSumInt Sum the number of eligible data
 func %sSumInt(column string, where string, args ...interface{}) (sum int64, err error) {
@@ -722,7 +719,7 @@ func %sSumInt(column string, where string, args ...interface{}) (sum int64, err 
 	return
 }
 `
-	sumfloat :=
+	tmpSumFloat :=
 		`
 // %sSumFloat Sum the number of eligible data
 func %sSumFloat(column string, where string, args ...interface{}) (sum float64, err error) {
@@ -744,7 +741,7 @@ func %sSumFloat(column string, where string, args ...interface{}) (sum float64, 
 }
 `
 
-	askfirst :=
+	tmpAskFirst :=
 		`
 // %sAskFirst query the first record of where
 func %sAskFirst(ask *sql.Tx, where string, args ...interface{}) (s *%s, err error) {
@@ -767,7 +764,7 @@ func %sAskFirst(ask *sql.Tx, where string, args ...interface{}) (s *%s, err erro
 	return
 }
 `
-	askpage :=
+	tmpAskPage :=
 		`
 // %sAskPage query one page record of where
 func %sAskPage(ask *sql.Tx, page int64, limit int64, where string, args ...interface{}) (ss []*%s, err error) {
@@ -792,28 +789,28 @@ func %sAskPage(ask *sql.Tx, page int64, limit int64, where string, args ...inter
 	return
 }
 `
-	askinsert :=
+	tmpAskInsert :=
 		`
 // %sAskInsert execute insert one record
 func %sAskInsert(ask *sql.Tx, insert map[string]interface{}) (rowsAffected int64, err error) {
 	return mysql.AskInsert(ask, "%s", insert)
 }
 `
-	askdelete :=
+	tmpAskDelete :=
 		`
 // %sAskDelete execute delete
 func %sAskDelete(ask *sql.Tx, where string, args ...interface{}) (rowsAffected int64, err error) {
 	return mysql.AskDelete(ask, "%s", where, args...)
 }
 `
-	askupdate :=
+	tmpAskUpdate :=
 		`
 // %sAskUpdate execute update
 func %sAskUpdate(ask *sql.Tx, update map[string]interface{}, where string, args ...interface{}) (rowsAffected int64, err error) {
 	return mysql.AskUpdate(ask, "%s", update, where, args...)
 }
 `
-	askcount :=
+	tmpAskCount :=
 		`
 // %sAskCount Count the number of eligible data
 func %sAskCount(ask *sql.Tx, where string, args ...interface{}) (count int64, err error) {
@@ -834,7 +831,7 @@ func %sAskCount(ask *sql.Tx, where string, args ...interface{}) (count int64, er
 	return
 }
 `
-	asksumint :=
+	tmpAskSumInt :=
 		`
 // %sAskSumInt Sum the number of eligible data
 func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) (sum int64, err error) {
@@ -855,7 +852,7 @@ func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) 
 	return
 }
 `
-	asksumfloat :=
+	tmpAskSumFloat :=
 		`
 // %sAskSumFloat Sum the number of eligible data
 func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}) (sum float64, err error) {
@@ -894,7 +891,7 @@ func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}
 			continue
 		}
 		// TableFirst
-		assoc.WriteString(fmt.Sprintf(first,
+		assoc.WriteString(fmt.Sprintf(tmpFirst,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
@@ -903,7 +900,7 @@ func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}
 			fmt.Sprintf("SELECT %s FROM `%s` WHERE (%%s) LIMIT 0, 1;", DatabaseTableColumnsToString(columns, "`"), *t.TableName),
 		))
 		// TablePage
-		assoc.WriteString(fmt.Sprintf(page,
+		assoc.WriteString(fmt.Sprintf(tmpPage,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
@@ -912,43 +909,43 @@ func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}
 			fmt.Sprintf("SELECT %s FROM `%s` WHERE (%%s)", DatabaseTableColumnsToString(columns, "`"), *t.TableName),
 		))
 		// TableInsert
-		assoc.WriteString(fmt.Sprintf(insert,
+		assoc.WriteString(fmt.Sprintf(tmpInsert,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			*t.TableName,
 		))
 		// TableDelete
-		assoc.WriteString(fmt.Sprintf(delete,
+		assoc.WriteString(fmt.Sprintf(tmpDelete,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			*t.TableName,
 		))
 		// TableUpdate
-		assoc.WriteString(fmt.Sprintf(update,
+		assoc.WriteString(fmt.Sprintf(tmpUpdate,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			*t.TableName,
 		))
 		// TableCount
-		assoc.WriteString(fmt.Sprintf(count,
+		assoc.WriteString(fmt.Sprintf(tmpCount,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			fmt.Sprintf("SELECT COUNT(*) AS `count` FROM `%s` WHERE (%%s);", *t.TableName),
 		))
 		// TableSumInt
-		assoc.WriteString(fmt.Sprintf(sumint,
+		assoc.WriteString(fmt.Sprintf(tmpSumInt,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			fmt.Sprintf("SELECT SUM(%%s) AS `sum` FROM `%s` WHERE (%%s);", *t.TableName),
 		))
 		// TableSumFloat
-		assoc.WriteString(fmt.Sprintf(sumfloat,
+		assoc.WriteString(fmt.Sprintf(tmpSumFloat,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			fmt.Sprintf("SELECT SUM(%%s) AS `sum` FROM `%s` WHERE (%%s);", *t.TableName),
 		))
 		// TableAskFirst
-		assoc.WriteString(fmt.Sprintf(askfirst,
+		assoc.WriteString(fmt.Sprintf(tmpAskFirst,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
@@ -957,7 +954,7 @@ func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}
 			fmt.Sprintf("SELECT %s FROM `%s` WHERE (%%s) LIMIT 0, 1;", DatabaseTableColumnsToString(columns, "`"), *t.TableName),
 		))
 		// TableAskPage
-		assoc.WriteString(fmt.Sprintf(askpage,
+		assoc.WriteString(fmt.Sprintf(tmpAskPage,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
@@ -966,37 +963,37 @@ func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}
 			fmt.Sprintf("SELECT %s FROM `%s` WHERE (%%s)", DatabaseTableColumnsToString(columns, "`"), *t.TableName),
 		))
 		// TableAskInsert
-		assoc.WriteString(fmt.Sprintf(askinsert,
+		assoc.WriteString(fmt.Sprintf(tmpAskInsert,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			*t.TableName,
 		))
 		// TableAskDelete
-		assoc.WriteString(fmt.Sprintf(askdelete,
+		assoc.WriteString(fmt.Sprintf(tmpAskDelete,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			*t.TableName,
 		))
 		// TableAskUpdate
-		assoc.WriteString(fmt.Sprintf(askupdate,
+		assoc.WriteString(fmt.Sprintf(tmpAskUpdate,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			*t.TableName,
 		))
 		// TableAskCount
-		assoc.WriteString(fmt.Sprintf(askcount,
+		assoc.WriteString(fmt.Sprintf(tmpAskCount,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			fmt.Sprintf("SELECT COUNT(*) AS `count` FROM `%s` WHERE (%%s);", *t.TableName),
 		))
 		// TableAskSumInt
-		assoc.WriteString(fmt.Sprintf(asksumint,
+		assoc.WriteString(fmt.Sprintf(tmpAskSumInt,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			fmt.Sprintf("SELECT SUM(%%s) AS `sum` FROM `%s` WHERE (%%s);", *t.TableName),
 		))
 		// TableAskSumFloat
-		assoc.WriteString(fmt.Sprintf(asksumfloat,
+		assoc.WriteString(fmt.Sprintf(tmpAskSumFloat,
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			fmt.Sprintf("SELECT SUM(%%s) AS `sum` FROM `%s` WHERE (%%s);", *t.TableName),
