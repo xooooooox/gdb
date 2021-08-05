@@ -1123,7 +1123,7 @@ func WriteDatabaseToGoStructSet(database, filename string) (err error) {
 			}
 			assoc.WriteString(fmt.Sprintf("\t%s: %s,\n", wc.ColumnNamePascal, gdv))
 		}
-		assoc.WriteString(fmt.Sprintf("\n\n"))
+		assoc.WriteString(fmt.Sprintf("\n"))
 	}
 	if filename == "" {
 		filename = "column.map"
