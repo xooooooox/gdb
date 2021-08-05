@@ -8,7 +8,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/xooooooox/gas/name"
 )
@@ -217,6 +220,53 @@ type WriteColumn struct {
 	DateType            string
 }
 
+func AscMapStringString(msi map[string]string) (key []string, val []string) {
+	if msi == nil {
+		return
+	}
+	length := len(msi)
+	key = make([]string, length, length)
+	val = make([]string, length, length)
+	i := 0
+	for k, _ := range msi {
+		key[i] = k
+		i++
+	}
+	sort.Strings(key)
+	for k, v := range key {
+		val[k] = msi[v]
+	}
+	return
+}
+
+// DatabaseTableColumnsToString all columns to string
+func DatabaseTableColumnsToString(columns []*Column, coated string) string {
+	var cs []string
+	for _, c := range columns {
+		if c.ColumnName == nil {
+			continue
+		}
+		cs = append(cs, fmt.Sprintf("%s%s%s", coated, *c.ColumnName, coated))
+	}
+	return strings.Join(cs, ", ")
+}
+
+// DatabaseTableColumnsToScanString all columns to scan string
+func DatabaseTableColumnsToScanString(columns []*Column) string {
+	var cs bytes.Buffer
+	length := len(columns)
+	for i := 0; i < length; i++ {
+		if columns[i].ColumnName == nil {
+			continue
+		}
+		cs.WriteString(fmt.Sprintf("\t\t\t\t&s.%s,", name.UnderlineToPascal(strings.ToLower(*columns[i].ColumnName))))
+		if i < length-1 {
+			cs.WriteString("\n")
+		}
+	}
+	return cs.String()
+}
+
 func WriteDatabaseToGoStruct(database, filename, pkg string) (err error) {
 	var tables []*Table
 	tables, err = Tables(database)
@@ -228,11 +278,12 @@ func WriteDatabaseToGoStruct(database, filename, pkg string) (err error) {
 		Table:        []*WriteTable{},
 		WriteStr:     []string{},
 	}
-	var bb, bt bytes.Buffer
-	// var bc bytes.Buffer
-	bb.WriteString(fmt.Sprintf("package %s\n\n", pkg))
-	bt.WriteString(fmt.Sprintf("const (\n"))
-	// bc.WriteString(fmt.Sprintf("const (\n"))
+	var bbs, ut, cs, uc bytes.Buffer
+	bbs.WriteString(fmt.Sprintf("package %s\n\n", pkg))
+	ut.WriteString(fmt.Sprintf("const (\n"))
+	cs.WriteString(fmt.Sprintf("const (\n"))
+	uc.WriteString(fmt.Sprintf("const (\n"))
+	var uniqueColumn map[string]string = map[string]string{}
 	// query table.columns, assemble structure data
 	for _, t := range tables {
 		if t.TableName == nil {
@@ -245,12 +296,13 @@ func WriteDatabaseToGoStruct(database, filename, pkg string) (err error) {
 		flt := strings.ToLower(*t.TableName)
 		wt.TableNamePascal = name.UnderlineToPascal(flt)
 		wt.TableNameUnderline = name.PascalToUnderline(wt.TableNamePascal)
-		bt.WriteString(fmt.Sprintf("\tTable%s = \"%s\" // %s\n", wt.TableNamePascal, wt.TableNameUnderline, wt.TableComment))
+		ut.WriteString(fmt.Sprintf("\tUt%s = \"%s\" // %s\n", wt.TableNamePascal, wt.TableNameUnderline, wt.TableComment))
 		var columns []*Column
 		columns, err = Columns(database, *t.TableName)
 		if err != nil {
 			continue
 		}
+		cs.WriteString(fmt.Sprintf("Cs%s = \"%s\" // %s\n", wt.TableNamePascal, DatabaseTableColumnsToString(columns, "`"), wt.TableComment))
 		for _, c := range columns {
 			if c.ColumnName == nil {
 				continue
@@ -265,7 +317,8 @@ func WriteDatabaseToGoStruct(database, filename, pkg string) (err error) {
 			flc := strings.ToLower(wc.ColumnName)
 			wc.ColumnNamePascal = name.UnderlineToPascal(flc)
 			wc.ColumnNameUnderline = name.PascalToUnderline(wc.ColumnNamePascal)
-			// bc.WriteString(fmt.Sprintf("\t%s%s = \"%s\" // %s.%s\n", wt.TableNamePascal, wc.ColumnNamePascal, wc.ColumnNameUnderline, wt.TableComment, wc.ColumnComment))
+			// bd.WriteString(fmt.Sprintf("\t%s%s = \"%s\" // %s.%s\n", wt.TableNamePascal, wc.ColumnNamePascal, wc.ColumnNameUnderline, wt.TableComment, wc.ColumnComment))
+			uniqueColumn[wc.ColumnNamePascal] = *c.ColumnName
 			gdv := ""
 			if c.ColumnDefault == nil {
 				gdv = "nil"
@@ -286,22 +339,29 @@ func WriteDatabaseToGoStruct(database, filename, pkg string) (err error) {
 		}
 		wd.Table = append(wd.Table, wt)
 	}
-	bt.WriteString(")\n\n")
-	// bc.WriteString(")\n\n")
-	bb.Write(bt.Bytes())
-	// bb.Write(bc.Bytes())
+	uk, uv := AscMapStringString(uniqueColumn)
+	length := len(uk)
+	for i := 0; i < length; i++ {
+		uc.WriteString(fmt.Sprintf("\tUc%s = \"%s\"\n", uk[i], uv[i]))
+	}
+	ut.WriteString(")\n\n")
+	cs.WriteString(")\n\n")
+	uc.WriteString(")\n\n")
+	bbs.Write(ut.Bytes())
+	bbs.Write(cs.Bytes())
+	bbs.Write(uc.Bytes())
 	for _, t := range wd.Table {
-		bb.WriteString(fmt.Sprintf("// %s %s %s\n", t.TableNamePascal, t.TableNameUnderline, t.TableComment))
-		bb.WriteString(fmt.Sprintf("type %s struct {\n", t.TableNamePascal))
+		bbs.WriteString(fmt.Sprintf("// %s %s %s\n", t.TableNamePascal, t.TableNameUnderline, t.TableComment))
+		bbs.WriteString(fmt.Sprintf("type %s struct {\n", t.TableNamePascal))
 		for _, c := range t.Column {
-			bb.WriteString(fmt.Sprintf("\t%s %s `json:\"%s\"` // %s\n", c.ColumnNamePascal, c.DateType, c.ColumnNameUnderline, c.ColumnComment))
+			bbs.WriteString(fmt.Sprintf("\t%s %s `json:\"%s\"` // %s\n", c.ColumnNamePascal, c.DateType, c.ColumnNameUnderline, c.ColumnComment))
 		}
-		bb.WriteString("}\n\n")
+		bbs.WriteString("}\n\n")
 	}
 	if filename == "" {
 		filename = "database.go"
 	}
-	err = os.WriteFile(filename, bb.Bytes(), 0644)
+	err = os.WriteFile(filename, bbs.Bytes(), 0644)
 	if err != nil {
 		return
 	}
@@ -486,34 +546,6 @@ func WriteDatabaseToGoScan(database, filename string) (err error) {
 		return
 	}
 	return
-}
-
-// DatabaseTableColumnsToString all columns to string
-func DatabaseTableColumnsToString(columns []*Column, coated string) string {
-	var cs []string
-	for _, c := range columns {
-		if c.ColumnName == nil {
-			continue
-		}
-		cs = append(cs, fmt.Sprintf("%s%s%s", coated, *c.ColumnName, coated))
-	}
-	return strings.Join(cs, ", ")
-}
-
-// DatabaseTableColumnsToScanString all columns to scan string
-func DatabaseTableColumnsToScanString(columns []*Column) string {
-	var cs bytes.Buffer
-	length := len(columns)
-	for i := 0; i < length; i++ {
-		if columns[i].ColumnName == nil {
-			continue
-		}
-		cs.WriteString(fmt.Sprintf("\t\t\t\t&s.%s,", name.UnderlineToPascal(strings.ToLower(*columns[i].ColumnName))))
-		if i < length-1 {
-			cs.WriteString("\n")
-		}
-	}
-	return cs.String()
 }
 
 func WriteDatabaseToGoColumn(database, filename string) (err error) {
@@ -1102,6 +1134,100 @@ func WriteDatabaseToGoStructSet(database, filename string) (err error) {
 	err = os.WriteFile(filename, assoc.Bytes(), 0644)
 	if err != nil {
 		return
+	}
+	return
+}
+
+// WriteAll write mysql structure into file
+func WriteAll(host string, port int, user string, pass string, charset string, database string, director string, pkg string) (err error) {
+	pool, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s",
+		user,
+		pass,
+		host,
+		port,
+		database,
+		charset,
+	))
+	if err != nil {
+		return
+	}
+	pool.SetConnMaxLifetime(time.Minute * 3)
+	pool.SetMaxOpenConns(32)
+	pool.SetMaxIdleConns(32)
+	defer pool.Close()
+
+	dir := ""
+	dir, err = filepath.Abs(director)
+	if err != nil {
+		return
+	}
+	_, err = os.Stat(dir)
+	if err != nil {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return
+		}
+	}
+	ps := os.PathSeparator
+	pss := string(ps)
+	if !strings.HasSuffix(dir, pss) {
+		dir += pss
+	}
+	err = WriteDatabaseToGoStruct(database, dir+"mysql_struct_details.go", pkg)
+	if err != nil {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return
+		}
+	}
+	err = WriteDatabaseToGoMap(database, dir+"mysql_struct_details.map")
+	if err != nil {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return
+		}
+	}
+	err = WriteDatabaseToGoScan(database, dir+"mysql_struct_details.scan")
+	if err != nil {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return
+		}
+	}
+	err = WriteDatabaseToGoSlice(database, dir+"mysql_struct_details.slice")
+	if err != nil {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return
+		}
+	}
+	err = WriteDatabaseToGoColumn(database, dir+"mysql_struct_details.string")
+	if err != nil {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return
+		}
+	}
+	err = WriteDatabaseQuicklyQuery(database, dir+"mysql_query_details.go", pkg)
+	if err != nil {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return
+		}
+	}
+	err = WriteDatabaseToGoStructDefine(database, dir+"mysql_struct_details.struct.define")
+	if err != nil {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return
+		}
+	}
+	err = WriteDatabaseToGoStructSet(database, dir+"mysql_struct_details.struct.set")
+	if err != nil {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return
+		}
 	}
 	return
 }
