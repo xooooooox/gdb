@@ -9,6 +9,10 @@ import (
 	"strings"
 )
 
+const (
+	Placeholder = "?"
+)
+
 // Insert mysql insert map(key-value)
 func Insert(table string, insert map[string]interface{}) (rowsAffected int64, err error) {
 	if insert == nil || len(insert) == 0 {

@@ -1,4 +1,4 @@
 github.com/go-sql-driver/mysql v1.6.0 h1:BCTh4TKNUYmOmMUcQ3IipzF5prigylS7XXjEkfCHuOE=
 github.com/go-sql-driver/mysql v1.6.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
-github.com/xooooooox/gas v1.0.1 h1:DbwrmnuAjxt+wXieaoEfmCTIknrqh70zyQ3kow5za+o=
-github.com/xooooooox/gas v1.0.1/go.mod h1:2rdbrwGmnYv8DZ5gikkdbK+DdL+cG6wgB/iIwvQ9/04=
+github.com/xooooooox/gas v1.0.2 h1:geqWB4QsxPHxgZGq8nC2zMuu43/fqOE1pFZd2a06g/A=
+github.com/xooooooox/gas v1.0.2/go.mod h1:2rdbrwGmnYv8DZ5gikkdbK+DdL+cG6wgB/iIwvQ9/04=

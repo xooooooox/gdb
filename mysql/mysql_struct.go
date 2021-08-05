@@ -582,7 +582,7 @@ import (
 	first :=
 		`
 // %sFirst query the first record of where
-func %sFirst(where string, args ...interface{}) (s *%s) {
+func %sFirst(where string, args ...interface{}) (s *%s, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
 			s = &%s{}
@@ -598,16 +598,16 @@ func %sFirst(where string, args ...interface{}) (s *%s) {
 	}
 	var prepare bytes.Buffer
 	prepare.WriteString(fmt.Sprintf("%s", where))
-	_ = mysql.Query(rows, prepare.String(), args...)
+	err = mysql.Query(rows, prepare.String(), args...)
 	return
 }
 `
 	page :=
 		`
 // %sPage query one page record of where
-func %sPage(page int64, limit int64, where string, args ...interface{}) (ss []*%s) {
+func %sPage(page int64, limit int64, where string, args ...interface{}) (ss []*%s, err error) {
 	rows := func(rows *sql.Rows) (err error) {
-		if rows.Next() {
+		for rows.Next() {
 			s := &%s{}
 			err = rows.Scan(
 %s
@@ -623,7 +623,7 @@ func %sPage(page int64, limit int64, where string, args ...interface{}) (ss []*%
 	var prepare bytes.Buffer
 	prepare.WriteString(fmt.Sprintf("%s", where))
 	prepare.WriteString(fmt.Sprintf(" LIMIT %%s;", mysql.PageLimit(page, limit)))
-	_ = mysql.Query(rows, prepare.String(), args...)
+	err = mysql.Query(rows, prepare.String(), args...)
 	return
 }
 `
@@ -651,10 +651,10 @@ func %sUpdate(update map[string]interface{}, where string, args ...interface{}) 
 	count :=
 		`
 // %sCount Count the number of eligible data
-func %sCount(where string, args ...interface{}) (count uint64) {
+func %sCount(where string, args ...interface{}) (count int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *uint64
+			var s *int64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
@@ -665,14 +665,14 @@ func %sCount(where string, args ...interface{}) (count uint64) {
 	}
 	var prepare bytes.Buffer
 	prepare.WriteString(fmt.Sprintf("%s", where))
-	_ = mysql.Query(rows, prepare.String(), args...)
+	err = mysql.Query(rows, prepare.String(), args...)
 	return
 }
 `
 	sumint :=
 		`
 // %sSumInt Sum the number of eligible data
-func %sSumInt(column string, where string, args ...interface{}) (sum int64) {
+func %sSumInt(column string, where string, args ...interface{}) (sum int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
 			var s *int64
@@ -686,14 +686,14 @@ func %sSumInt(column string, where string, args ...interface{}) (sum int64) {
 	}
 	var prepare bytes.Buffer
 	prepare.WriteString(fmt.Sprintf("%s", column, where))
-	_ = mysql.Query(rows, prepare.String(), args...)
+	err = mysql.Query(rows, prepare.String(), args...)
 	return
 }
 `
 	sumfloat :=
 		`
-// %sSumFloat64 Sum the number of eligible data
-func %sSumFloat64(column string, where string, args ...interface{}) (sum float64) {
+// %sSumFloat Sum the number of eligible data
+func %sSumFloat(column string, where string, args ...interface{}) (sum float64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
 			var s *float64
@@ -707,7 +707,7 @@ func %sSumFloat64(column string, where string, args ...interface{}) (sum float64
 	}
 	var prepare bytes.Buffer
 	prepare.WriteString(fmt.Sprintf("%s", column, where))
-	_ = mysql.Query(rows, prepare.String(), args...)
+	err = mysql.Query(rows, prepare.String(), args...)
 	return
 }
 `
@@ -715,7 +715,7 @@ func %sSumFloat64(column string, where string, args ...interface{}) (sum float64
 	askfirst :=
 		`
 // %sAskFirst query the first record of where
-func %sAskFirst(ask *sql.Tx, where string, args ...interface{}) (s *%s) {
+func %sAskFirst(ask *sql.Tx, where string, args ...interface{}) (s *%s, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
 			s = &%s{}
@@ -731,16 +731,16 @@ func %sAskFirst(ask *sql.Tx, where string, args ...interface{}) (s *%s) {
 	}
 	var prepare bytes.Buffer
 	prepare.WriteString(fmt.Sprintf("%s", where))
-	_ = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
 	return
 }
 `
 	askpage :=
 		`
 // %sAskPage query one page record of where
-func %sAskPage(ask *sql.Tx, page int64, limit int64, where string, args ...interface{}) (ss []*%s) {
+func %sAskPage(ask *sql.Tx, page int64, limit int64, where string, args ...interface{}) (ss []*%s, err error) {
 	rows := func(rows *sql.Rows) (err error) {
-		if rows.Next() {
+		for rows.Next() {
 			s := &%s{}
 			err = rows.Scan(
 %s
@@ -756,7 +756,7 @@ func %sAskPage(ask *sql.Tx, page int64, limit int64, where string, args ...inter
 	var prepare bytes.Buffer
 	prepare.WriteString(fmt.Sprintf("%s", where))
 	prepare.WriteString(fmt.Sprintf(" LIMIT %%s;", mysql.PageLimit(page, limit)))
-	_ = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
 	return
 }
 `
@@ -784,10 +784,10 @@ func %sAskUpdate(ask *sql.Tx, update map[string]interface{}, where string, args 
 	askcount :=
 		`
 // %sAskCount Count the number of eligible data
-func %sAskCount(ask *sql.Tx, where string, args ...interface{}) (count uint64) {
+func %sAskCount(ask *sql.Tx, where string, args ...interface{}) (count int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *uint64
+			var s *int64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
@@ -798,14 +798,14 @@ func %sAskCount(ask *sql.Tx, where string, args ...interface{}) (count uint64) {
 	}
 	var prepare bytes.Buffer
 	prepare.WriteString(fmt.Sprintf("%s", where))
-	_ = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
 	return
 }
 `
 	asksumint :=
 		`
 // %sAskSumInt Sum the number of eligible data
-func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) (sum int64) {
+func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) (sum int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
 			var s *int64
@@ -819,14 +819,14 @@ func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) 
 	}
 	var prepare bytes.Buffer
 	prepare.WriteString(fmt.Sprintf("%s", column, where))
-	_ = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
 	return
 }
 `
 	asksumfloat :=
 		`
-// %sAskSumFloat64 Sum the number of eligible data
-func %sAskSumFloat64(ask *sql.Tx, column string, where string, args ...interface{}) (sum float64) {
+// %sAskSumFloat Sum the number of eligible data
+func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}) (sum float64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
 			var s *float64
@@ -840,7 +840,7 @@ func %sAskSumFloat64(ask *sql.Tx, column string, where string, args ...interface
 	}
 	var prepare bytes.Buffer
 	prepare.WriteString(fmt.Sprintf("%s", column, where))
-	_ = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
 	return
 }
 `
