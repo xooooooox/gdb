@@ -648,6 +648,69 @@ func %sUpdate(update map[string]interface{}, where string, args ...interface{}) 
 	return mysql.Update("%s", update, where, args...)
 }
 `
+	count :=
+		`
+// %sCount Count the number of eligible data
+func %sCount(where string, args ...interface{}) (count uint64) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *uint64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			count = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", where))
+	_ = mysql.Query(rows, prepare.String(), args...)
+	return
+}
+`
+	sumint :=
+		`
+// %sSumInt Sum the number of eligible data
+func %sSumInt(column string, where string, args ...interface{}) (sum int64) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *int64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			sum = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column, where))
+	_ = mysql.Query(rows, prepare.String(), args...)
+	return
+}
+`
+	sumfloat :=
+		`
+// %sSumFloat64 Sum the number of eligible data
+func %sSumFloat64(column string, where string, args ...interface{}) (sum float64) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *float64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			sum = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column, where))
+	_ = mysql.Query(rows, prepare.String(), args...)
+	return
+}
+`
 
 	askfirst :=
 		`
@@ -718,6 +781,69 @@ func %sAskUpdate(ask *sql.Tx, update map[string]interface{}, where string, args 
 	return mysql.AskUpdate(ask, "%s", update, where, args...)
 }
 `
+	askcount :=
+		`
+// %sAskCount Count the number of eligible data
+func %sAskCount(ask *sql.Tx, where string, args ...interface{}) (count uint64) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *uint64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			count = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", where))
+	_ = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	return
+}
+`
+	asksumint :=
+		`
+// %sAskSumInt Sum the number of eligible data
+func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) (sum int64) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *int64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			sum = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column, where))
+	_ = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	return
+}
+`
+	asksumfloat :=
+		`
+// %sAskSumFloat64 Sum the number of eligible data
+func %sAskSumFloat64(ask *sql.Tx, column string, where string, args ...interface{}) (sum float64) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *float64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			sum = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column, where))
+	_ = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	return
+}
+`
 	// query table.columns, assemble structure data
 	for _, t := range tables {
 		if t.TableName == nil {
@@ -771,6 +897,24 @@ func %sAskUpdate(ask *sql.Tx, update map[string]interface{}, where string, args 
 			wt.TableNamePascal,
 			*t.TableName,
 		))
+		// TableCount
+		assoc.WriteString(fmt.Sprintf(count,
+			wt.TableNamePascal,
+			wt.TableNamePascal,
+			fmt.Sprintf("SELECT COUNT(*) AS `count` FROM `%s` WHERE (%%s);", *t.TableName),
+		))
+		// TableSumInt
+		assoc.WriteString(fmt.Sprintf(sumint,
+			wt.TableNamePascal,
+			wt.TableNamePascal,
+			fmt.Sprintf("SELECT SUM(%%s) AS `sum` FROM `%s` WHERE (%%s);", *t.TableName),
+		))
+		// TableSumFloat
+		assoc.WriteString(fmt.Sprintf(sumfloat,
+			wt.TableNamePascal,
+			wt.TableNamePascal,
+			fmt.Sprintf("SELECT SUM(%%s) AS `sum` FROM `%s` WHERE (%%s);", *t.TableName),
+		))
 		// TableAskFirst
 		assoc.WriteString(fmt.Sprintf(askfirst,
 			wt.TableNamePascal,
@@ -806,6 +950,24 @@ func %sAskUpdate(ask *sql.Tx, update map[string]interface{}, where string, args 
 			wt.TableNamePascal,
 			wt.TableNamePascal,
 			*t.TableName,
+		))
+		// TableAskCount
+		assoc.WriteString(fmt.Sprintf(askcount,
+			wt.TableNamePascal,
+			wt.TableNamePascal,
+			fmt.Sprintf("SELECT COUNT(*) AS `count` FROM `%s` WHERE (%%s);", *t.TableName),
+		))
+		// TableAskSumInt
+		assoc.WriteString(fmt.Sprintf(asksumint,
+			wt.TableNamePascal,
+			wt.TableNamePascal,
+			fmt.Sprintf("SELECT SUM(%%s) AS `sum` FROM `%s` WHERE (%%s);", *t.TableName),
+		))
+		// TableAskSumFloat
+		assoc.WriteString(fmt.Sprintf(asksumfloat,
+			wt.TableNamePascal,
+			wt.TableNamePascal,
+			fmt.Sprintf("SELECT SUM(%%s) AS `sum` FROM `%s` WHERE (%%s);", *t.TableName),
 		))
 	}
 	if filename == "" {

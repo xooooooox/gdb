@@ -12,11 +12,11 @@ import (
 // Insert mysql insert map(key-value)
 func Insert(table string, insert map[string]interface{}) (rowsAffected int64, err error) {
 	if insert == nil || len(insert) == 0 {
-		err = errors.New("`mod` is empty")
+		err = errors.New("`insert` is empty")
 		return
 	}
 	var ba, bb, bc bytes.Buffer
-	bb.WriteString(fmt.Sprintf("INSERT INTO `%s` (", table))
+	bb.WriteString(fmt.Sprintf("INSERT INTO %s (", Ordinary(table)))
 	col, val := sort.AscMsi(insert)
 	length := len(col)
 	for i := 0; i < length; i++ {
@@ -24,7 +24,7 @@ func Insert(table string, insert map[string]interface{}) (rowsAffected int64, er
 			ba.WriteString(",")
 			bc.WriteString(",")
 		}
-		bc.WriteString(fmt.Sprintf(" `%s`", col[i]))
+		bc.WriteString(fmt.Sprintf(" %s", Ordinary(col[i])))
 		ba.WriteString(fmt.Sprintf(" %s", Placeholder))
 	}
 	bb.Write(bc.Bytes())
@@ -38,7 +38,7 @@ func Insert(table string, insert map[string]interface{}) (rowsAffected int64, er
 // Delete mysql delete where
 func Delete(table string, where string, args ...interface{}) (rowsAffected int64, err error) {
 	var bb bytes.Buffer
-	bb.WriteString(fmt.Sprintf("DELETE FROM `%s`", table))
+	bb.WriteString(fmt.Sprintf("DELETE FROM %s", Ordinary(table)))
 	if where != "" {
 		bb.WriteString(fmt.Sprintf(" WHERE (%s)", where))
 	}
@@ -50,18 +50,18 @@ func Delete(table string, where string, args ...interface{}) (rowsAffected int64
 // Update mysql update
 func Update(table string, update map[string]interface{}, where string, args ...interface{}) (rowsAffected int64, err error) {
 	if update == nil || len(update) == 0 {
-		err = errors.New("`mod` is empty")
+		err = errors.New("`update` is empty")
 		return
 	}
 	var bb bytes.Buffer
-	bb.WriteString(fmt.Sprintf("UPDATE `%s` SET", table))
+	bb.WriteString(fmt.Sprintf("UPDATE %s SET", Ordinary(table)))
 	col, val := sort.AscMsi(update)
 	length := len(col)
 	for i := 0; i < length; i++ {
 		if i > 0 {
 			bb.WriteString(",")
 		}
-		bb.WriteString(fmt.Sprintf(" `%s` = %s", col[i], Placeholder))
+		bb.WriteString(fmt.Sprintf(" %s = %s", Ordinary(col[i]), Placeholder))
 	}
 	if where != "" {
 		bb.WriteString(fmt.Sprintf(" WHERE (%s)", where))
@@ -79,11 +79,11 @@ func AskInsert(tx *sql.Tx, table string, insert map[string]interface{}) (rowsAff
 		return
 	}
 	if insert == nil || len(insert) == 0 {
-		err = errors.New("`mod` is empty")
+		err = errors.New("`insert` is empty")
 		return
 	}
 	var ba, bb, bc bytes.Buffer
-	bb.WriteString(fmt.Sprintf("INSERT INTO `%s` (", table))
+	bb.WriteString(fmt.Sprintf("INSERT INTO %s (", Ordinary(table)))
 	col, val := sort.AscMsi(insert)
 	length := len(col)
 	for i := 0; i < length; i++ {
@@ -91,7 +91,7 @@ func AskInsert(tx *sql.Tx, table string, insert map[string]interface{}) (rowsAff
 			ba.WriteString(",")
 			bc.WriteString(",")
 		}
-		bc.WriteString(fmt.Sprintf(" `%s`", col[i]))
+		bc.WriteString(fmt.Sprintf(" %s", Ordinary(col[i])))
 		ba.WriteString(fmt.Sprintf(" %s", Placeholder))
 	}
 	bb.Write(bc.Bytes())
@@ -105,11 +105,11 @@ func AskInsert(tx *sql.Tx, table string, insert map[string]interface{}) (rowsAff
 // AskDelete transaction mysql delete where
 func AskDelete(tx *sql.Tx, table string, where string, args ...interface{}) (rowsAffected int64, err error) {
 	if tx == nil {
-		err = errors.New("`ask` is nil")
+		err = errors.New("`tx` is nil")
 		return
 	}
 	var bb bytes.Buffer
-	bb.WriteString(fmt.Sprintf("DELETE FROM `%s`", table))
+	bb.WriteString(fmt.Sprintf("DELETE FROM %s", Ordinary(table)))
 	if where != "" {
 		bb.WriteString(fmt.Sprintf(" WHERE (%s)", where))
 	}
@@ -125,18 +125,18 @@ func AskUpdate(tx *sql.Tx, table string, update map[string]interface{}, where st
 		return
 	}
 	if update == nil || len(update) == 0 {
-		err = errors.New("`mod` is empty")
+		err = errors.New("`update` is empty")
 		return
 	}
 	var bb bytes.Buffer
-	bb.WriteString(fmt.Sprintf("UPDATE `%s` SET", table))
+	bb.WriteString(fmt.Sprintf("UPDATE %s SET", Ordinary(table)))
 	col, val := sort.AscMsi(update)
 	length := len(col)
 	for i := 0; i < length; i++ {
 		if i > 0 {
 			bb.WriteString(",")
 		}
-		bb.WriteString(fmt.Sprintf(" `%s` = %s", col[i], Placeholder))
+		bb.WriteString(fmt.Sprintf(" %s = %s", Ordinary(col[i]), Placeholder))
 	}
 	if where != "" {
 		bb.WriteString(fmt.Sprintf(" WHERE (%s)", where))
@@ -147,9 +147,17 @@ func AskUpdate(tx *sql.Tx, table string, update map[string]interface{}, where st
 	return
 }
 
+// Ordinary ordinary mysql string
+func Ordinary(s string) string {
+	s = strings.ReplaceAll(s, " ", "")
+	s = strings.ReplaceAll(s, "`", "")
+	s = strings.ReplaceAll(s, ".", "`.`")
+	return fmt.Sprintf("`%s`", s)
+}
+
 // ColumnSingleOperator mysql column single operator
 func ColumnSingleOperator(column, operator string) string {
-	return fmt.Sprintf("`%s` %s %s", column, operator, Placeholder)
+	return fmt.Sprintf("%s %s %s", Ordinary(column), operator, Placeholder)
 }
 
 // ColumnEqual mysql column equal
@@ -184,32 +192,32 @@ func ColumnLessThanOrEqual(column string) string {
 
 // ColumnIsNull mysql column is null
 func ColumnIsNull(column string) string {
-	return fmt.Sprintf("`%s` IS NULL", column)
+	return fmt.Sprintf("%s IS NULL", Ordinary(column))
 }
 
 // ColumnIsNotNull mysql column is not null
 func ColumnIsNotNull(column string) string {
-	return fmt.Sprintf("`%s` IS NOT NULL", column)
+	return fmt.Sprintf("%s IS NOT NULL", Ordinary(column))
 }
 
 // ColumnBetween mysql column between
 func ColumnBetween(column string) string {
-	return fmt.Sprintf("`%s` BETWEEN %s AND %s", column, Placeholder, Placeholder)
+	return fmt.Sprintf("%s BETWEEN %s AND %s", Ordinary(column), Placeholder, Placeholder)
 }
 
 // ColumnNotBetween mysql column not between
 func ColumnNotBetween(column string) string {
-	return fmt.Sprintf("`%s` NOT BETWEEN %s AND %s", column, Placeholder, Placeholder)
+	return fmt.Sprintf("%s NOT BETWEEN %s AND %s", Ordinary(column), Placeholder, Placeholder)
 }
 
 // ColumnLike mysql column like
 func ColumnLike(column string) string {
-	return fmt.Sprintf("`%s` LIKE %s", column, Placeholder)
+	return fmt.Sprintf("%s LIKE %s", Ordinary(column), Placeholder)
 }
 
 // ColumnNotLike mysql column not like
 func ColumnNotLike(column string) string {
-	return fmt.Sprintf("`%s` NOT LIKE %s", column, Placeholder)
+	return fmt.Sprintf("%s NOT LIKE %s", Ordinary(column), Placeholder)
 }
 
 // ColumnIn mysql column in
@@ -218,7 +226,7 @@ func ColumnIn(column string, length int) string {
 	for i := 0; i < length; i++ {
 		p[i] = Placeholder
 	}
-	return fmt.Sprintf("`%s` IN (%s)", column, strings.Join(p, ", "))
+	return fmt.Sprintf("%s IN (%s)", Ordinary(column), strings.Join(p, ", "))
 }
 
 // ColumnNotIn mysql column not in
@@ -227,7 +235,7 @@ func ColumnNotIn(column string, length int) string {
 	for i := 0; i < length; i++ {
 		p[i] = Placeholder
 	}
-	return fmt.Sprintf("`%s` NOT IN (%s)", column, strings.Join(p, ", "))
+	return fmt.Sprintf("%s NOT IN (%s)", Ordinary(column), strings.Join(p, ", "))
 }
 
 // PageLimit mysql page limit
