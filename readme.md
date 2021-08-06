@@ -3,7 +3,7 @@ package main
 
 import (
 	"flag"
-	"github.com/xooooooox/gdb/mysql"
+	"github.com/xooooooox/gdb/mysql/mg"
 	"log"
 )
 
@@ -20,12 +20,11 @@ func main() {
 	if !flag.Parsed() {
 		flag.Parse()
 	}
-	err := mysql.WriteAll(*host, *port, *user, *pass, *charset, *database, *director, *pkg)
+	err := mg.WriteAll(*host, *port, *user, *pass, *charset, *database, *director, *pkg)
 	if err != nil {
 		log.Fatalln(err)
 		return
 	}
 	log.Println("success")
 }
-
 ```
