@@ -466,9 +466,9 @@ func %sUpdate(update map[string]interface{}, where string, args ...interface{}) 
 }
 `
 
-var TmpFuncTablePrimaryKeyFirst = `
-// %sPrimaryKeyFirst query the first by primary key
-func %sPrimaryKeyFirst(pkv interface{}) (s *%s, err error) {
+var TmpFuncTablePkFirst = `
+// %sPkFirst query the first by primary key
+func %sPkFirst(pkv interface{}) (s *%s, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
 			s = &%s{}
@@ -487,66 +487,9 @@ func %sPrimaryKeyFirst(pkv interface{}) (s *%s, err error) {
 }
 `
 
-var TmpFuncTableFirst = `
-// %sFirst query the first record of where
-func %sFirst(where string, args ...interface{}) (s *%s, err error) {
-	rows := func(rows *sql.Rows) (err error) {
-		if rows.Next() {
-			s = &%s{}
-			err = rows.Scan(
-%s
-			)
-			if err != nil {
-				s = nil
-				return
-			}
-		}
-		return
-	}
-	var prepare bytes.Buffer
-	prepare.WriteString("%s")
-	if where != "" {
-		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
-	}
-	prepare.WriteString(" LIMIT 0, 1;")
-	err = mysql.Query(rows, prepare.String(), args...)
-	return
-}
-`
-
-var TmpFuncTableOrderByFirst = `
-// %sOrderByFirst query the first record of where using order by
-func %sOrderByFirst(order string, where string, args ...interface{}) (s *%s, err error) {
-	rows := func(rows *sql.Rows) (err error) {
-		if rows.Next() {
-			s = &%s{}
-			err = rows.Scan(
-%s
-			)
-			if err != nil {
-				s = nil
-				return
-			}
-		}
-		return
-	}
-	var prepare bytes.Buffer
-	prepare.WriteString("%s")
-	if where != "" {
-		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
-	}
-	if order != "" {
-		prepare.WriteString(fmt.Sprintf(" ORDER BY %%s", order))
-	}
-	prepare.WriteString(" LIMIT 0, 1;")
-	err = mysql.Query(rows, prepare.String(), args...)
-	return
-}
-`
-
-var TmpFuncTableQueryAll = `
-// %sQueryAll query all
-func %sQueryAll(where string, args ...interface{}) (ss []*%s, err error) {
+var TmpFuncTableAll = `
+// %sAll query all
+func %sAll(where string, args ...interface{}) (ss []*%s, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		for rows.Next() {
 			s := &%s{}
@@ -567,96 +510,6 @@ func %sQueryAll(where string, args ...interface{}) (ss []*%s, err error) {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
 	prepare.WriteString(";")
-	err = mysql.Query(rows, prepare.String(), args...)
-	return
-}
-`
-
-var TmpFuncTableOrderByQueryAll = `
-// %sOrderByQueryAll query all of where
-func %sOrderByQueryAll(order string, where string, args ...interface{}) (ss []*%s, err error) {
-	rows := func(rows *sql.Rows) (err error) {
-		for rows.Next() {
-			s := &%s{}
-			err = rows.Scan(
-%s
-			)
-			if err != nil {
-				ss = nil
-				return
-			}
-			ss = append(ss, s)
-		}
-		return
-	}
-	var prepare bytes.Buffer
-	prepare.WriteString("%s")
-	if where != "" {
-		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
-	}
-	if order != "" {
-		prepare.WriteString(fmt.Sprintf(" ORDER BY %%s", order))
-	}
-	prepare.WriteString(";")
-	err = mysql.Query(rows, prepare.String(), args...)
-	return
-}
-`
-
-var TmpFuncTablePage = `
-// %sPage query one page record of where
-func %sPage(limit int64, page int64, where string, args ...interface{}) (ss []*%s, err error) {
-	rows := func(rows *sql.Rows) (err error) {
-		for rows.Next() {
-			s := &%s{}
-			err = rows.Scan(
-%s
-			)
-			if err != nil {
-				ss = nil
-				return
-			}
-			ss = append(ss, s)
-		}
-		return
-	}
-	var prepare bytes.Buffer
-	prepare.WriteString("%s")
-	if where != "" {
-		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
-	}
-	prepare.WriteString(fmt.Sprintf(" LIMIT %%s;", mysql.LimitPage(limit, page)))
-	err = mysql.Query(rows, prepare.String(), args...)
-	return
-}
-`
-
-var TmpFuncTableOrderByPage = `
-// %sOrderByPage query one page record of where using order by
-func %sOrderByPage(order string, limit int64, page int64, where string, args ...interface{}) (ss []*%s, err error) {
-	rows := func(rows *sql.Rows) (err error) {
-		for rows.Next() {
-			s := &%s{}
-			err = rows.Scan(
-%s
-			)
-			if err != nil {
-				ss = nil
-				return
-			}
-			ss = append(ss, s)
-		}
-		return
-	}
-	var prepare bytes.Buffer
-	prepare.WriteString("%s")
-	if where != "" {
-		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
-	}
-	if order != "" {
-		prepare.WriteString(fmt.Sprintf(" ORDER BY %%s", order))
-	}
-	prepare.WriteString(fmt.Sprintf(" LIMIT %%s;", mysql.LimitPage(limit, page)))
 	err = mysql.Query(rows, prepare.String(), args...)
 	return
 }
@@ -760,9 +613,9 @@ func %sAskUpdate(ask *sql.Tx, update map[string]interface{}, where string, args 
 }
 `
 
-var TmpFuncTableAskPrimaryKeyFirst = `
-// %sAskPrimaryKeyFirst query the first by primary key
-func %sAskPrimaryKeyFirst(ask *sql.Tx, pkv interface{}) (s *%s, err error) {
+var TmpFuncTableAskPkFirst = `
+// %sAskPkFirst query the first by primary key
+func %sAskPkFirst(ask *sql.Tx, pkv interface{}) (s *%s, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
 			s = &%s{}
@@ -781,66 +634,9 @@ func %sAskPrimaryKeyFirst(ask *sql.Tx, pkv interface{}) (s *%s, err error) {
 }
 `
 
-var TmpFuncTableAskFirst = `
-// %sAskFirst query the first record of where
-func %sAskFirst(ask *sql.Tx, where string, args ...interface{}) (s *%s, err error) {
-	rows := func(rows *sql.Rows) (err error) {
-		if rows.Next() {
-			s = &%s{}
-			err = rows.Scan(
-%s
-			)
-			if err != nil {
-				s = nil
-				return
-			}
-		}
-		return
-	}
-	var prepare bytes.Buffer
-	prepare.WriteString("%s")
-	if where != "" {
-		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
-	}
-	prepare.WriteString(" LIMIT 0, 1;")
-	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
-	return
-}
-`
-
-var TmpFuncTableAskOrderByFirst = `
-// %sAskOrderByFirst query the first record of where using order by
-func %sAskOrderByFirst(ask *sql.Tx, order string, where string, args ...interface{}) (s *%s, err error) {
-	rows := func(rows *sql.Rows) (err error) {
-		if rows.Next() {
-			s = &%s{}
-			err = rows.Scan(
-%s
-			)
-			if err != nil {
-				s = nil
-				return
-			}
-		}
-		return
-	}
-	var prepare bytes.Buffer
-	prepare.WriteString("%s")
-	if where != "" {
-		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
-	}
-	if order != "" {
-		prepare.WriteString(fmt.Sprintf(" ORDER BY %%s", order))
-	}
-	prepare.WriteString(" LIMIT 0, 1;")
-	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
-	return
-}
-`
-
-var TmpFuncTableAskQueryAll = `
-// %sAskQueryAll query all
-func %sAskQueryAll(ask *sql.Tx, where string, args ...interface{}) (ss []*%s, err error) {
+var TmpFuncTableAskAll = `
+// %sAskAll query all
+func %sAskAll(ask *sql.Tx, where string, args ...interface{}) (ss []*%s, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		for rows.Next() {
 			s := &%s{}
@@ -861,96 +657,6 @@ func %sAskQueryAll(ask *sql.Tx, where string, args ...interface{}) (ss []*%s, er
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
 	prepare.WriteString(";")
-	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
-	return
-}
-`
-
-var TmpFuncTableAskOrderByQueryAll = `
-// %sAskOrderByQueryAll query all of where
-func %sAskOrderByQueryAll(ask *sql.Tx, order string, where string, args ...interface{}) (ss []*%s, err error) {
-	rows := func(rows *sql.Rows) (err error) {
-		for rows.Next() {
-			s := &%s{}
-			err = rows.Scan(
-%s
-			)
-			if err != nil {
-				ss = nil
-				return
-			}
-			ss = append(ss, s)
-		}
-		return
-	}
-	var prepare bytes.Buffer
-	prepare.WriteString("%s")
-	if where != "" {
-		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
-	}
-	if order != "" {
-		prepare.WriteString(fmt.Sprintf(" ORDER BY %%s", order))
-	}
-	prepare.WriteString(";")
-	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
-	return
-}
-`
-
-var TmpFuncTableAskPage = `
-// %sAskPage query one page record of where
-func %sAskPage(ask *sql.Tx, limit int64, page int64, where string, args ...interface{}) (ss []*%s, err error) {
-	rows := func(rows *sql.Rows) (err error) {
-		for rows.Next() {
-			s := &%s{}
-			err = rows.Scan(
-%s
-			)
-			if err != nil {
-				ss = nil
-				return
-			}
-			ss = append(ss, s)
-		}
-		return
-	}
-	var prepare bytes.Buffer
-	prepare.WriteString("%s")
-	if where != "" {
-		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
-	}
-	prepare.WriteString(fmt.Sprintf(" LIMIT %%s;", mysql.LimitPage(limit, page)))
-	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
-	return
-}
-`
-
-var TmpFuncTableAskOrderByPage = `
-// %sAskOrderByPage query one page record of where using order by
-func %sAskOrderByPage(ask *sql.Tx, order string, limit int64, page int64, where string, args ...interface{}) (ss []*%s, err error) {
-	rows := func(rows *sql.Rows) (err error) {
-		for rows.Next() {
-			s := &%s{}
-			err = rows.Scan(
-%s
-			)
-			if err != nil {
-				ss = nil
-				return
-			}
-			ss = append(ss, s)
-		}
-		return
-	}
-	var prepare bytes.Buffer
-	prepare.WriteString("%s")
-	if where != "" {
-		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
-	}
-	if order != "" {
-		prepare.WriteString(fmt.Sprintf(" ORDER BY %%s", order))
-	}
-	prepare.WriteString(fmt.Sprintf(" LIMIT %%s;", mysql.LimitPage(limit, page)))
 	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
 	return
 }
@@ -1077,8 +783,8 @@ func FuncTable(filename, pkg string) (err error) {
 			t.TableNamePascal,
 			t.TableName,
 		))
-		// TablePrimaryKeyFirst
-		assoc.WriteString(fmt.Sprintf(TmpFuncTablePrimaryKeyFirst,
+		// TablePkFirst
+		assoc.WriteString(fmt.Sprintf(TmpFuncTablePkFirst,
 			t.TableNamePascal,
 			t.TableNamePascal,
 			t.TableNamePascal,
@@ -1086,8 +792,8 @@ func FuncTable(filename, pkg string) (err error) {
 			ColumnsToScanString(t.MysqlColumn),
 			fmt.Sprintf("%s WHERE (%s = ?) LIMIT 0, 1;", SelectAllColumnFromTable(t.MysqlColumn, t.TableName), mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
 		))
-		// TableFirst
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableFirst,
+		// TableAll
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableAll,
 			t.TableNamePascal,
 			t.TableNamePascal,
 			t.TableNamePascal,
@@ -1095,52 +801,6 @@ func FuncTable(filename, pkg string) (err error) {
 			ColumnsToScanString(t.MysqlColumn),
 			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
 		))
-		// TableOrderByFirst
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableOrderByFirst,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			ColumnsToScanString(t.MysqlColumn),
-			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
-		))
-		// TableQueryAll
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableQueryAll,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			ColumnsToScanString(t.MysqlColumn),
-			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
-		))
-		// TableOrderByQueryAll
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableOrderByQueryAll,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			ColumnsToScanString(t.MysqlColumn),
-			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
-		))
-		// TablePage
-		assoc.WriteString(fmt.Sprintf(TmpFuncTablePage,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			ColumnsToScanString(t.MysqlColumn),
-			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
-		))
-		// TableOrderByPage
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableOrderByPage,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			ColumnsToScanString(t.MysqlColumn),
-			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
-		))
-
 		// TableCount
 		assoc.WriteString(fmt.Sprintf(TmpFuncTableCount,
 			t.TableNamePascal,
@@ -1177,8 +837,8 @@ func FuncTable(filename, pkg string) (err error) {
 			t.TableNamePascal,
 			t.TableName,
 		))
-		// TableAskPrimaryKeyFirst
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskPrimaryKeyFirst,
+		// TableAskPkFirst
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskPkFirst,
 			t.TableNamePascal,
 			t.TableNamePascal,
 			t.TableNamePascal,
@@ -1186,53 +846,8 @@ func FuncTable(filename, pkg string) (err error) {
 			ColumnsToScanString(t.MysqlColumn),
 			fmt.Sprintf("%s WHERE (%s = ?) LIMIT 0, 1;", SelectAllColumnFromTable(t.MysqlColumn, t.TableName), mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
 		))
-		// TableAskFirst
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskFirst,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			ColumnsToScanString(t.MysqlColumn),
-			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
-		))
-		// TableAskOrderByFirst
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskOrderByFirst,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			ColumnsToScanString(t.MysqlColumn),
-			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
-		))
-		// TableAskQueryAll
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskQueryAll,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			ColumnsToScanString(t.MysqlColumn),
-			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
-		))
-		// TableAskOrderByQueryAll
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskOrderByQueryAll,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			ColumnsToScanString(t.MysqlColumn),
-			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
-		))
-		// TableAskPage
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskPage,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			t.TableNamePascal,
-			ColumnsToScanString(t.MysqlColumn),
-			SelectAllColumnFromTable(t.MysqlColumn, t.TableName),
-		))
-		// TableAskOrderByPage
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskOrderByPage,
+		// TableAskAll
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskAll,
 			t.TableNamePascal,
 			t.TableNamePascal,
 			t.TableNamePascal,
