@@ -242,16 +242,16 @@ func ColumnNotIn(column string, length int) string {
 	return fmt.Sprintf("%s NOT IN (%s)", Ordinary(column), strings.Join(p, ", "))
 }
 
-// PageLimit mysql page limit
-func PageLimit(page, limit int64) string {
-	if page <= 0 {
-		page = 1
-	}
+// LimitPage mysql limit page
+func LimitPage(limit int64, page int64) string {
 	if limit <= 0 {
 		limit = 1
 	}
 	if limit > 1000 {
 		limit = 1000
+	}
+	if page <= 0 {
+		page = 1
 	}
 	return fmt.Sprintf("%d, %d", (page-1)*limit, limit)
 }
