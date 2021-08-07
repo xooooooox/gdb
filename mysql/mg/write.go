@@ -476,7 +476,6 @@ func %sPkFirst(pkv interface{}) (s *%s, err error) {
 %s
 			)
 			if err != nil {
-				s = nil
 				return
 			}
 		}
@@ -497,7 +496,6 @@ func %sAll(where string, args ...interface{}) (ss []*%s, err error) {
 %s
 			)
 			if err != nil {
-				ss = nil
 				return
 			}
 			ss = append(ss, s)
@@ -623,7 +621,6 @@ func %sAskPkFirst(ask *sql.Tx, pkv interface{}) (s *%s, err error) {
 %s
 			)
 			if err != nil {
-				s = nil
 				return
 			}
 		}
@@ -644,7 +641,6 @@ func %sAskAll(ask *sql.Tx, where string, args ...interface{}) (ss []*%s, err err
 %s
 			)
 			if err != nil {
-				ss = nil
 				return
 			}
 			ss = append(ss, s)
