@@ -346,10 +346,10 @@ func VarTableColumnSlice(filename, pkg string) (err error) {
 	return
 }
 
-func VarTableColumnSql(filename, pkg string) (err error) {
+func ConstTableColumnSql(filename, pkg string) (err error) {
 	var all, tmp bytes.Buffer
 	all.WriteString(fmt.Sprintf("package %s\n\n", pkg))
-	tmp.WriteString(fmt.Sprintf("var (\n"))
+	tmp.WriteString(fmt.Sprintf("const (\n"))
 	for _, t := range BD.BagTable {
 		if t.MysqlTable.TableName == nil {
 			continue
@@ -466,9 +466,23 @@ func %sUpdate(update map[string]interface{}, where string, args ...interface{}) 
 }
 `
 
-var TmpFuncTablePkFirst = `
-// %sPkFirst query the first by primary key
-func %sPkFirst(pkv interface{}) (s *%s, err error) {
+var TmpFuncTableDel = `
+// %sDel execute delete by primary key
+func %sDel(pkv interface{}) (rowsAffected int64, err error) {
+	return mysql.Delete("%s", "%s", pkv)
+}
+`
+
+var TmpFuncTableMod = `
+// %sMod execute update by primary key
+func %sMod(update map[string]interface{}, pkv interface{}) (rowsAffected int64, err error) {
+	return mysql.Update("%s", update, "%s", pkv)
+}
+`
+
+var TmpFuncTableGet = `
+// %sGet query the first by primary key
+func %sGet(pkv interface{}) (s *%s, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
 			s = &%s{}
@@ -611,9 +625,23 @@ func %sAskUpdate(ask *sql.Tx, update map[string]interface{}, where string, args 
 }
 `
 
-var TmpFuncTableAskPkFirst = `
-// %sAskPkFirst query the first by primary key
-func %sAskPkFirst(ask *sql.Tx, pkv interface{}) (s *%s, err error) {
+var TmpFuncTableAskDel = `
+// %sAskDel execute delete by primary key
+func %sAskDel(ask *sql.Tx, pkv interface{}) (rowsAffected int64, err error) {
+	return mysql.AskDelete(ask, "%s", "%s", pkv)
+}
+`
+
+var TmpFuncTableAskMod = `
+// %sAskMod execute update by primary key
+func %sAskMod(ask *sql.Tx, update map[string]interface{}, pkv interface{}) (rowsAffected int64, err error) {
+	return mysql.AskUpdate(ask, "%s", update, "%s", pkv)
+}
+`
+
+var TmpFuncTableAskGet = `
+// %sAskGet query the first by primary key
+func %sAskGet(ask *sql.Tx, pkv interface{}) (s *%s, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
 			s = &%s{}
@@ -779,8 +807,22 @@ func FuncTable(filename, pkg string) (err error) {
 			t.TableNamePascal,
 			t.TableName,
 		))
-		// TablePkFirst
-		assoc.WriteString(fmt.Sprintf(TmpFuncTablePkFirst,
+		// TableDelete
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableDel,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			t.TableName,
+			fmt.Sprintf("%s = ?",mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
+		))
+		// TableUpdate
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableMod,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			t.TableName,
+			fmt.Sprintf("%s = ?",mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
+		))
+		// TableGet
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableGet,
 			t.TableNamePascal,
 			t.TableNamePascal,
 			t.TableNamePascal,
@@ -833,8 +875,22 @@ func FuncTable(filename, pkg string) (err error) {
 			t.TableNamePascal,
 			t.TableName,
 		))
-		// TableAskPkFirst
-		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskPkFirst,
+		// TableAskDelete
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskDel,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			t.TableName,
+			fmt.Sprintf("%s = ?",mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
+		))
+		// TableAskUpdate
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskMod,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			t.TableName,
+			fmt.Sprintf("%s = ?",mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
+		))
+		// TableAskGet
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskGet,
 			t.TableNamePascal,
 			t.TableNamePascal,
 			t.TableNamePascal,
@@ -1136,7 +1192,7 @@ func WriteAll(host string, port int, user string, pass string, charset string, d
 	if err != nil {
 		return
 	}
-	err = VarTableColumnSql(dir+"mg1_var_table_column_sql.go", pkg)
+	err = ConstTableColumnSql(dir+"mg1_const_table_column_sql.go", pkg)
 	if err != nil {
 		return
 	}
