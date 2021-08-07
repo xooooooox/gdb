@@ -514,7 +514,7 @@ func %sAll(where string, args ...interface{}) (ss []*%s, err error) {
 `
 
 var TmpFuncTableCount = `
-// %sCount Count the number of eligible data
+// %sCount count the number of eligible data
 func %sCount(where string, args ...interface{}) (count int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
@@ -539,7 +539,7 @@ func %sCount(where string, args ...interface{}) (count int64, err error) {
 `
 
 var TmpFuncTableSumInt = `
-// %sSumInt Sum the number of eligible data
+// %sSumInt sum the number of eligible data
 func %sSumInt(column string, where string, args ...interface{}) (sum int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
@@ -564,7 +564,7 @@ func %sSumInt(column string, where string, args ...interface{}) (sum int64, err 
 `
 
 var TmpFuncTableSumFloat = `
-// %sSumFloat Sum the number of eligible data
+// %sSumFloat sum the number of eligible data
 func %sSumFloat(column string, where string, args ...interface{}) (sum float64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
@@ -659,7 +659,7 @@ func %sAskAll(ask *sql.Tx, where string, args ...interface{}) (ss []*%s, err err
 `
 
 var TmpFuncTableAskCount = `
-// %sAskCount Count the number of eligible data
+// %sAskCount count the number of eligible data
 func %sAskCount(ask *sql.Tx, where string, args ...interface{}) (count int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
@@ -684,7 +684,7 @@ func %sAskCount(ask *sql.Tx, where string, args ...interface{}) (count int64, er
 `
 
 var TmpFuncTableAskSumInt = `
-// %sAskSumInt Sum the number of eligible data
+// %sAskSumInt sum the number of eligible data
 func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) (sum int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
@@ -709,7 +709,7 @@ func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) 
 `
 
 var TmpFuncTableAskSumFloat = `
-// %sAskSumFloat Sum the number of eligible data
+// %sAskSumFloat sum the number of eligible data
 func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}) (sum float64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
