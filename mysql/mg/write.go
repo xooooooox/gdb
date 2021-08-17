@@ -577,6 +577,56 @@ func %sSumInt(column string, where string, args ...interface{}) (sum int64, err 
 }
 `
 
+var TmpFuncTableMinInt = `
+// %sMinInt min the number of eligible data
+func %sMinInt(column string, where string, args ...interface{}) (min int64, err error) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *int64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			min = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column))
+	if where != "" {
+		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
+	}
+	prepare.WriteString(";")
+	err = mysql.Query(rows, prepare.String(), args...)
+	return
+}
+`
+
+var TmpFuncTableMaxInt = `
+// %sMaxInt sum the number of eligible data
+func %sMaxInt(column string, where string, args ...interface{}) (max int64, err error) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *int64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			max = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column))
+	if where != "" {
+		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
+	}
+	prepare.WriteString(";")
+	err = mysql.Query(rows, prepare.String(), args...)
+	return
+}
+`
+
 var TmpFuncTableSumFloat = `
 // %sSumFloat sum the number of eligible data
 func %sSumFloat(column string, where string, args ...interface{}) (sum float64, err error) {
@@ -588,6 +638,56 @@ func %sSumFloat(column string, where string, args ...interface{}) (sum float64, 
 				return
 			}
 			sum = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column))
+	if where != "" {
+		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
+	}
+	prepare.WriteString(";")
+	err = mysql.Query(rows, prepare.String(), args...)
+	return
+}
+`
+
+var TmpFuncTableMinFloat = `
+// %sMinFloat min the number of eligible data
+func %sMinFloat(column string, where string, args ...interface{}) (min float64, err error) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *float64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			min = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column))
+	if where != "" {
+		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
+	}
+	prepare.WriteString(";")
+	err = mysql.Query(rows, prepare.String(), args...)
+	return
+}
+`
+
+var TmpFuncTableMaxFloat = `
+// %sMaxFloat sum the number of eligible data
+func %sMaxFloat(column string, where string, args ...interface{}) (max float64, err error) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *float64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			max = *s
 		}
 		return
 	}
@@ -711,6 +811,56 @@ func %sAskCount(ask *sql.Tx, where string, args ...interface{}) (count int64, er
 }
 `
 
+var TmpFuncTableAskMinInt = `
+// %sAskMinInt min the number of eligible data
+func %sAskMinInt(ask *sql.Tx, column string, where string, args ...interface{}) (min int64, err error) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *int64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			min = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column))
+	if where != "" {
+		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
+	}
+	prepare.WriteString(";")
+	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	return
+}
+`
+
+var TmpFuncTableAskMaxInt = `
+// %sAskMaxInt sum the number of eligible data
+func %sAskMaxInt(ask *sql.Tx, column string, where string, args ...interface{}) (max int64, err error) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *int64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			max = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column))
+	if where != "" {
+		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
+	}
+	prepare.WriteString(";")
+	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	return
+}
+`
+
 var TmpFuncTableAskSumInt = `
 // %sAskSumInt sum the number of eligible data
 func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) (sum int64, err error) {
@@ -747,6 +897,56 @@ func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}
 				return
 			}
 			sum = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column))
+	if where != "" {
+		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
+	}
+	prepare.WriteString(";")
+	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	return
+}
+`
+
+var TmpFuncTableAskMinFloat = `
+// %sAskMinFloat min the number of eligible data
+func %sAskMinFloat(ask *sql.Tx, column string, where string, args ...interface{}) (min float64, err error) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *float64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			min = *s
+		}
+		return
+	}
+	var prepare bytes.Buffer
+	prepare.WriteString(fmt.Sprintf("%s", column))
+	if where != "" {
+		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
+	}
+	prepare.WriteString(";")
+	err = mysql.AskQuery(ask, rows, prepare.String(), args...)
+	return
+}
+`
+
+var TmpFuncTableAskMaxFloat = `
+// %sAskMaxFloat sum the number of eligible data
+func %sAskMaxFloat(ask *sql.Tx, column string, where string, args ...interface{}) (max float64, err error) {
+	rows := func(rows *sql.Rows) (err error) {
+		if rows.Next() {
+			var s *float64
+			err = rows.Scan(&s)
+			if err != nil {
+				return
+			}
+			max = *s
 		}
 		return
 	}
@@ -812,14 +1012,14 @@ func FuncTable(filename, pkg string) (err error) {
 			t.TableNamePascal,
 			t.TableNamePascal,
 			t.TableName,
-			fmt.Sprintf("%s = ?",mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
+			fmt.Sprintf("%s = ?", mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
 		))
 		// TableUpdate
 		assoc.WriteString(fmt.Sprintf(TmpFuncTableMod,
 			t.TableNamePascal,
 			t.TableNamePascal,
 			t.TableName,
-			fmt.Sprintf("%s = ?",mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
+			fmt.Sprintf("%s = ?", mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
 		))
 		// TableGet
 		assoc.WriteString(fmt.Sprintf(TmpFuncTableGet,
@@ -845,11 +1045,35 @@ func FuncTable(filename, pkg string) (err error) {
 			t.TableNamePascal,
 			fmt.Sprintf("SELECT COUNT(*) AS `count` FROM `%s`", t.TableName),
 		))
+		// TableMinInt
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableMinInt,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			fmt.Sprintf("SELECT MIN(%%s) AS `min` FROM `%s`", t.TableName),
+		))
+		// TableMaxInt
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableMaxInt,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			fmt.Sprintf("SELECT MAX(%%s) AS `max` FROM `%s`", t.TableName),
+		))
 		// TableSumInt
 		assoc.WriteString(fmt.Sprintf(TmpFuncTableSumInt,
 			t.TableNamePascal,
 			t.TableNamePascal,
 			fmt.Sprintf("SELECT SUM(%%s) AS `sum` FROM `%s`", t.TableName),
+		))
+		// TableMinFloat
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableMinFloat,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			fmt.Sprintf("SELECT MIN(%%s) AS `min` FROM `%s`", t.TableName),
+		))
+		// TableMaxFloat
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableMaxFloat,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			fmt.Sprintf("SELECT MAX(%%s) AS `max` FROM `%s`", t.TableName),
 		))
 		// TableSumFloat
 		assoc.WriteString(fmt.Sprintf(TmpFuncTableSumFloat,
@@ -880,14 +1104,14 @@ func FuncTable(filename, pkg string) (err error) {
 			t.TableNamePascal,
 			t.TableNamePascal,
 			t.TableName,
-			fmt.Sprintf("%s = ?",mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
+			fmt.Sprintf("%s = ?", mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
 		))
 		// TableAskUpdate
 		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskMod,
 			t.TableNamePascal,
 			t.TableNamePascal,
 			t.TableName,
-			fmt.Sprintf("%s = ?",mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
+			fmt.Sprintf("%s = ?", mysql.Ordinary(FindColumnPrimaryKeyName(t.MysqlColumn))),
 		))
 		// TableAskGet
 		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskGet,
@@ -913,11 +1137,35 @@ func FuncTable(filename, pkg string) (err error) {
 			t.TableNamePascal,
 			fmt.Sprintf("SELECT COUNT(*) AS `count` FROM `%s`", t.TableName),
 		))
+		// TableAskMinInt
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskMinInt,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			fmt.Sprintf("SELECT MIN(%%s) AS `min` FROM `%s`", t.TableName),
+		))
+		// TableAskMaxInt
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskMaxInt,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			fmt.Sprintf("SELECT MAX(%%s) AS `max` FROM `%s`", t.TableName),
+		))
 		// TableAskSumInt
 		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskSumInt,
 			t.TableNamePascal,
 			t.TableNamePascal,
 			fmt.Sprintf("SELECT SUM(%%s) AS `sum` FROM `%s`", t.TableName),
+		))
+		// TableAskMinFloat
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskMinFloat,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			fmt.Sprintf("SELECT MIN(%%s) AS `min` FROM `%s`", t.TableName),
+		))
+		// TableAskMaxFloat
+		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskMaxFloat,
+			t.TableNamePascal,
+			t.TableNamePascal,
+			fmt.Sprintf("SELECT MAX(%%s) AS `max` FROM `%s`", t.TableName),
 		))
 		// TableAskSumFloat
 		assoc.WriteString(fmt.Sprintf(TmpFuncTableAskSumFloat,
