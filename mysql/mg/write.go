@@ -588,7 +588,7 @@ func %sMinInt(column string, where string, args ...interface{}) (s *int64, err e
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
@@ -611,7 +611,7 @@ func %sMaxInt(column string, where string, args ...interface{}) (s *int64, err e
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
@@ -634,7 +634,7 @@ func %sSumFloat(column string, where string, args ...interface{}) (s *float64, e
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
@@ -657,7 +657,7 @@ func %sMinFloat(column string, where string, args ...interface{}) (s *float64, e
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
@@ -680,7 +680,7 @@ func %sMaxFloat(column string, where string, args ...interface{}) (s *float64, e
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
@@ -812,7 +812,7 @@ func %sAskMinInt(ask *sql.Tx, column string, where string, args ...interface{}) 
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
@@ -835,7 +835,7 @@ func %sAskMaxInt(ask *sql.Tx, column string, where string, args ...interface{}) 
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
@@ -858,7 +858,7 @@ func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) 
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
@@ -881,7 +881,7 @@ func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
@@ -904,7 +904,7 @@ func %sAskMinFloat(ask *sql.Tx, column string, where string, args ...interface{}
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
@@ -927,7 +927,7 @@ func %sAskMaxFloat(ask *sql.Tx, column string, where string, args ...interface{}
 		return
 	}
 	var prepare bytes.Buffer
-	prepare.WriteString(fmt.Sprintf("%s", column))
+	prepare.WriteString(fmt.Sprintf("%s", mysql.Ordinary(column)))
 	if where != "" {
 		prepare.WriteString(fmt.Sprintf(" WHERE (%%s)", where))
 	}
