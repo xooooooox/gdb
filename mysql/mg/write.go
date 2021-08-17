@@ -554,15 +554,13 @@ func %sCount(where string, args ...interface{}) (count int64, err error) {
 
 var TmpFuncTableSumInt = `
 // %sSumInt sum the number of eligible data
-func %sSumInt(column string, where string, args ...interface{}) (sum int64, err error) {
+func %sSumInt(column string, where string, args ...interface{}) (s *int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *int64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			sum = *s
 		}
 		return
 	}
@@ -579,15 +577,13 @@ func %sSumInt(column string, where string, args ...interface{}) (sum int64, err 
 
 var TmpFuncTableMinInt = `
 // %sMinInt min the number of eligible data
-func %sMinInt(column string, where string, args ...interface{}) (min int64, err error) {
+func %sMinInt(column string, where string, args ...interface{}) (s *int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *int64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			min = *s
 		}
 		return
 	}
@@ -604,15 +600,13 @@ func %sMinInt(column string, where string, args ...interface{}) (min int64, err 
 
 var TmpFuncTableMaxInt = `
 // %sMaxInt sum the number of eligible data
-func %sMaxInt(column string, where string, args ...interface{}) (max int64, err error) {
+func %sMaxInt(column string, where string, args ...interface{}) (s *int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *int64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			max = *s
 		}
 		return
 	}
@@ -629,15 +623,13 @@ func %sMaxInt(column string, where string, args ...interface{}) (max int64, err 
 
 var TmpFuncTableSumFloat = `
 // %sSumFloat sum the number of eligible data
-func %sSumFloat(column string, where string, args ...interface{}) (sum float64, err error) {
+func %sSumFloat(column string, where string, args ...interface{}) (s *float64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *float64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			sum = *s
 		}
 		return
 	}
@@ -654,15 +646,13 @@ func %sSumFloat(column string, where string, args ...interface{}) (sum float64, 
 
 var TmpFuncTableMinFloat = `
 // %sMinFloat min the number of eligible data
-func %sMinFloat(column string, where string, args ...interface{}) (min float64, err error) {
+func %sMinFloat(column string, where string, args ...interface{}) (s *float64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *float64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			min = *s
 		}
 		return
 	}
@@ -679,15 +669,13 @@ func %sMinFloat(column string, where string, args ...interface{}) (min float64, 
 
 var TmpFuncTableMaxFloat = `
 // %sMaxFloat sum the number of eligible data
-func %sMaxFloat(column string, where string, args ...interface{}) (max float64, err error) {
+func %sMaxFloat(column string, where string, args ...interface{}) (s *float64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *float64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			max = *s
 		}
 		return
 	}
@@ -813,15 +801,13 @@ func %sAskCount(ask *sql.Tx, where string, args ...interface{}) (count int64, er
 
 var TmpFuncTableAskMinInt = `
 // %sAskMinInt min the number of eligible data
-func %sAskMinInt(ask *sql.Tx, column string, where string, args ...interface{}) (min int64, err error) {
+func %sAskMinInt(ask *sql.Tx, column string, where string, args ...interface{}) (s *int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *int64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			min = *s
 		}
 		return
 	}
@@ -838,15 +824,13 @@ func %sAskMinInt(ask *sql.Tx, column string, where string, args ...interface{}) 
 
 var TmpFuncTableAskMaxInt = `
 // %sAskMaxInt sum the number of eligible data
-func %sAskMaxInt(ask *sql.Tx, column string, where string, args ...interface{}) (max int64, err error) {
+func %sAskMaxInt(ask *sql.Tx, column string, where string, args ...interface{}) (s *int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *int64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			max = *s
 		}
 		return
 	}
@@ -863,15 +847,13 @@ func %sAskMaxInt(ask *sql.Tx, column string, where string, args ...interface{}) 
 
 var TmpFuncTableAskSumInt = `
 // %sAskSumInt sum the number of eligible data
-func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) (sum int64, err error) {
+func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) (s *int64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *int64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			sum = *s
 		}
 		return
 	}
@@ -888,15 +870,13 @@ func %sAskSumInt(ask *sql.Tx, column string, where string, args ...interface{}) 
 
 var TmpFuncTableAskSumFloat = `
 // %sAskSumFloat sum the number of eligible data
-func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}) (sum float64, err error) {
+func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}) (s *float64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *float64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			sum = *s
 		}
 		return
 	}
@@ -913,15 +893,13 @@ func %sAskSumFloat(ask *sql.Tx, column string, where string, args ...interface{}
 
 var TmpFuncTableAskMinFloat = `
 // %sAskMinFloat min the number of eligible data
-func %sAskMinFloat(ask *sql.Tx, column string, where string, args ...interface{}) (min float64, err error) {
+func %sAskMinFloat(ask *sql.Tx, column string, where string, args ...interface{}) (s *float64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *float64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			min = *s
 		}
 		return
 	}
@@ -938,15 +916,13 @@ func %sAskMinFloat(ask *sql.Tx, column string, where string, args ...interface{}
 
 var TmpFuncTableAskMaxFloat = `
 // %sAskMaxFloat sum the number of eligible data
-func %sAskMaxFloat(ask *sql.Tx, column string, where string, args ...interface{}) (max float64, err error) {
+func %sAskMaxFloat(ask *sql.Tx, column string, where string, args ...interface{}) (s *float64, err error) {
 	rows := func(rows *sql.Rows) (err error) {
 		if rows.Next() {
-			var s *float64
 			err = rows.Scan(&s)
 			if err != nil {
 				return
 			}
-			max = *s
 		}
 		return
 	}
