@@ -151,7 +151,7 @@ func AskUpdate(tx *sql.Tx, table string, update map[string]interface{}, where st
 	return
 }
 
-// Ordinary ordinary mysql string
+// Ordinary mysql string
 func Ordinary(s string) string {
 	s = strings.ReplaceAll(s, " ", "")
 	s = strings.ReplaceAll(s, "`", "")
@@ -246,9 +246,6 @@ func ColumnNotIn(column string, length int) string {
 func LimitPage(limit int64, page int64) string {
 	if limit <= 0 {
 		limit = 1
-	}
-	if limit > 1000 {
-		limit = 1000
 	}
 	if page <= 0 {
 		page = 1
