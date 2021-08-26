@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/xooooooox/gas/sort"
+
 	"strings"
+
+	"github.com/xooooooox/gas/sort"
 )
 
 const (
@@ -15,7 +17,7 @@ const (
 
 // Insert mysql insert map(key-value)
 func Insert(table string, insert map[string]interface{}) (rowsAffected int64, err error) {
-	if insert == nil || len(insert) == 0 {
+	if len(insert) == 0 {
 		err = errors.New("insert column information is empty")
 		return
 	}
@@ -53,7 +55,7 @@ func Delete(table string, where string, args ...interface{}) (rowsAffected int64
 
 // Update mysql update
 func Update(table string, update map[string]interface{}, where string, args ...interface{}) (rowsAffected int64, err error) {
-	if update == nil || len(update) == 0 {
+	if len(update) == 0 {
 		err = errors.New("update column information is empty")
 		return
 	}
@@ -82,7 +84,7 @@ func AskInsert(tx *sql.Tx, table string, insert map[string]interface{}) (rowsAff
 		err = errors.New("transaction connection is unavailable")
 		return
 	}
-	if insert == nil || len(insert) == 0 {
+	if len(insert) == 0 {
 		err = errors.New("insert column information is empty")
 		return
 	}
@@ -128,7 +130,7 @@ func AskUpdate(tx *sql.Tx, table string, update map[string]interface{}, where st
 		err = errors.New("transaction connection is unavailable")
 		return
 	}
-	if update == nil || len(update) == 0 {
+	if len(update) == 0 {
 		err = errors.New("update column information is empty")
 		return
 	}
@@ -226,7 +228,7 @@ func ColumnNotLike(column string) string {
 
 // ColumnIn mysql column in
 func ColumnIn(column string, length int) string {
-	p := make([]string, length, length)
+	p := make([]string, length)
 	for i := 0; i < length; i++ {
 		p[i] = Placeholder
 	}
@@ -235,7 +237,7 @@ func ColumnIn(column string, length int) string {
 
 // ColumnNotIn mysql column not in
 func ColumnNotIn(column string, length int) string {
-	p := make([]string, length, length)
+	p := make([]string, length)
 	for i := 0; i < length; i++ {
 		p[i] = Placeholder
 	}
