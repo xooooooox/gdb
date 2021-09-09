@@ -464,7 +464,7 @@ func VarScanFuncTable(filename, pkg string) (err error) {
 		"database/sql"
 	)
 	`
-	var tmpScanOne = `var ScanOne%s = func(rows *sql.Rows) (s *%s, err error) {
+	var tmpScanOne = `func ScanOne%s(rows *sql.Rows) (s *%s, err error) {
 		if rows.Next() {
 			s = &%s{}
 			err = rows.Scan(
@@ -476,7 +476,7 @@ func VarScanFuncTable(filename, pkg string) (err error) {
 		}
 		return
 	}`
-	var tmpScanAll = `var ScanAll%s = func(rows *sql.Rows) (ss []*%s, err error) {
+	var tmpScanAll = `func ScanAll%s(rows *sql.Rows) (ss []*%s, err error) {
 		for rows.Next() {
 			s := &%s{}
 			err = rows.Scan(
