@@ -3,30 +3,152 @@ package main
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/xooooooox/gas/mysql"
-
-	"github.com/xooooooox/gas/name"
 )
 
-func Open(dsn string) (err error) {
-	err = mysql.Open(dsn)
+var username = flag.String("u", "root", "mysql username")
+
+var password = flag.String("p", "", "mysql password")
+
+var host = flag.String("h", "127.0.0.1", "mysql host")
+
+var port = flag.Int("P", 3306, "mysql port")
+
+var database = flag.String("d", "", "mysql database")
+
+var charset = flag.String("c", "utf8mb4", "mysql charset")
+
+var collation = flag.String("l", "utf8mb4_unicode_ci", "mysql collation")
+
+func main() {
+	if !flag.Parsed() {
+		flag.Parse()
+	}
+	err := Write(*username, *password, *host, *port, *database, *charset, *collation)
+	if err != nil {
+		fmt.Printf("%s\n", err.Error())
+	}
+}
+
+func Write(username, password, host string, port int, dbname, charset, collation string) (err error) {
+	if con := Db1(); con == nil {
+		err = Open(fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&collation=%s", username, password, host, port, dbname, charset, collation))
+		if err != nil {
+			return
+		}
+	}
+	dbs := NewDatabase(dbname)
+	// 查询数据库的所有表
+	err = dbs.QueryTable()
 	if err != nil {
 		return
 	}
-	db := mysql.Db1()
-	db.SetConnMaxLifetime(time.Minute * 3)
-	db.SetMaxOpenConns(16)
-	db.SetMaxIdleConns(16)
-	mysql.Db0(db)
+	// 查询表的所有字段
+	for _, t := range dbs.Table {
+		err = t.QueryColumn(dbs.Name)
+		if err != nil {
+			return
+		}
+	}
+	var fer bytes.Buffer
+	var bts []byte
+	fer.WriteString(`package main
+
+import (
+	"database/sql"
+)
+`)
+	bts, err = dbs.TemplateSql()
+	if err != nil {
+		return
+	} else {
+		fer.Write(bts)
+	}
+	bts, err = dbs.TemplateScan()
+	if err != nil {
+		return
+	} else {
+		fer.Write(bts)
+	}
+	bts, err = dbs.GoTypeTableStruct()
+	if err != nil {
+		return
+	} else {
+		fer.Write(bts)
+	}
+	var fil *os.File
+	fil, err = os.Create("db.go")
+	if err != nil {
+		return
+	}
+	defer fil.Close()
+	_, err = fil.Write(fer.Bytes())
+	if err != nil {
+		return
+	}
+	err = FmtGoFile("db.go")
+	if err != nil {
+		return
+	}
 	return
+}
+
+// =====================================================================================================================
+// custom function
+// =====================================================================================================================
+
+// PascalToUnderline XxxYyy to xxx_yyy
+func PascalToUnderline(s string) string {
+	var tmp []byte
+	j := false
+	num := len(s)
+	for i := 0; i < num; i++ {
+		d := s[i]
+		if i > 0 && d >= 'A' && d <= 'Z' && j {
+			tmp = append(tmp, '_')
+		}
+		if d != '_' {
+			j = true
+		}
+		tmp = append(tmp, d)
+	}
+	return strings.ToLower(string(tmp[:]))
+}
+
+// UnderlineToPascal xxx_yyy to XxxYyy
+func UnderlineToPascal(s string) string {
+	var tmp []byte
+	bts := []byte(s)
+	length := len(bts)
+	nextLetterNeedToUpper := true
+	for i := 0; i < length; i++ {
+		if bts[i] == '_' {
+			nextLetterNeedToUpper = true
+			continue
+		}
+		if nextLetterNeedToUpper && bts[i] >= 'a' && bts[i] <= 'z' {
+			tmp = append(tmp, bts[i]-32)
+		} else {
+			tmp = append(tmp, bts[i])
+		}
+		nextLetterNeedToUpper = false
+	}
+	return string(tmp[:])
+}
+
+func FmtGoFile(file string) error {
+	cmd := exec.Command("go", "fmt", file)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func MkdirAll(director string) (dir string, err error) {
@@ -48,6 +170,10 @@ func MkdirAll(director string) (dir string, err error) {
 	}
 	return
 }
+
+// =====================================================================================================================
+// write mysql database structure to go source file
+// =====================================================================================================================
 
 type Database struct {
 	Name  string   // 数据库名
@@ -122,18 +248,19 @@ func (a *Database) QueryTable() (err error) {
 		}
 		return
 	}
-	err = mysql.Query(fc, "SELECT `TABLE_SCHEMA`, `TABLE_NAME`, `TABLE_TYPE`, `ENGINE`, `ROW_FORMAT`, `TABLE_ROWS`, `AUTO_INCREMENT`, `CREATE_TIME`, `UPDATE_TIME`, `TABLE_COLLATION`, `TABLE_COMMENT` FROM `information_schema`.`TABLES` WHERE ( `TABLE_SCHEMA` = ? AND `TABLE_TYPE` = 'BASE TABLE' ) ORDER BY `TABLE_NAME` ASC;", a.Name)
+	err = Query(fc, "SELECT `TABLE_SCHEMA`, `TABLE_NAME`, `TABLE_TYPE`, `ENGINE`, `ROW_FORMAT`, `TABLE_ROWS`, `AUTO_INCREMENT`, `CREATE_TIME`, `UPDATE_TIME`, `TABLE_COLLATION`, `TABLE_COMMENT` FROM `information_schema`.`TABLES` WHERE ( `TABLE_SCHEMA` = ? AND `TABLE_TYPE` = 'BASE TABLE' ) ORDER BY `TABLE_NAME` ASC;", a.Name)
 	return
 }
 
 func (a *Database) GoTypeTableStruct() (bts []byte, err error) {
 	var tmp bytes.Buffer
+	tmp.WriteString("\n")
 	length := len(a.Table)
 	for i := 0; i < length; i++ {
-		tmp.WriteString(fmt.Sprintf("// %s %s %s\n", name.UnderlineToPascal(*(a.Table[i].TableName)), *(a.Table[i].TableName), *(a.Table[i].TableComment)))
-		tmp.WriteString(fmt.Sprintf("type %s struct {\n", name.UnderlineToPascal(*(a.Table[i].TableName))))
+		tmp.WriteString(fmt.Sprintf("// %s %s %s\n", UnderlineToPascal(*(a.Table[i].TableName)), *(a.Table[i].TableName), *(a.Table[i].TableComment)))
+		tmp.WriteString(fmt.Sprintf("type %s struct {\n", UnderlineToPascal(*(a.Table[i].TableName))))
 		for _, c := range a.Table[i].Column {
-			tmp.WriteString(fmt.Sprintf("\t%s %s `json:\"%s\"` // %s\n", name.UnderlineToPascal(*c.ColumnName), c.ColumnTypeToGoType(), *c.ColumnName, *c.ColumnComment))
+			tmp.WriteString(fmt.Sprintf("\t%s %s `json:\"%s\"` // %s\n", UnderlineToPascal(*c.ColumnName), c.ColumnTypeToGoType(), *c.ColumnName, *c.ColumnComment))
 		}
 		tmp.WriteString("}\n")
 		if i+1 != length {
@@ -154,7 +281,7 @@ func (a *Database) TemplateSql() (bts []byte, err error) {
 	var names string
 	tmp.WriteString("\nconst (\n")
 	for _, t := range a.Table {
-		names = name.UnderlineToPascal(*t.TableName)
+		names = UnderlineToPascal(*t.TableName)
 		colsWithoutPri = t.ColumnSqlStringWithoutPrimaryKey("`")
 		cols = make([]string, len(colsWithoutPri))
 		for index := range colsWithoutPri {
@@ -163,13 +290,12 @@ func (a *Database) TemplateSql() (bts []byte, err error) {
 		colsWithoutPriStr = strings.Join(colsWithoutPri, ", ")
 		colsStr = strings.Join(cols, ", ")
 		pri = t.FindColumnPrimaryKeyName()
-		// tmp.WriteString(fmt.Sprintf("// %s %s\n", *t.TableName, *t.TableComment))
 		tmp.WriteString(fmt.Sprintf("\t%sInsertSql = \"INSERT INTO `%s` ( %s ) VALUES ( %s );\"\n", names, *t.TableName, colsWithoutPriStr, colsStr))
 		tmp.WriteString(fmt.Sprintf("\t%sDeleteSql = \"DELETE FROM `%s` WHERE ( `%s` = ? );\"\n", names, *t.TableName, pri))
 		tmp.WriteString(fmt.Sprintf("\t%sUpdateSql = \"UPDATE `%s` SET %s WHERE ( `%s` = ? );\"\n", names, *t.TableName, t.ColumnSetSqlStringWithoutPrimaryKey("`"), pri))
 		tmp.WriteString(fmt.Sprintf("\t%sSelectSql = \"SELECT %s FROM `%s` WHERE ( `%s` = ? ) ORDER BY `%s` DESC LIMIT 0, 1;\"\n", names, t.ColumnSqlString("`"), *t.TableName, pri, pri))
 	}
-	tmp.WriteString("\n)\n")
+	tmp.WriteString(")\n")
 	bts = tmp.Bytes()
 	return
 }
@@ -207,7 +333,7 @@ func %sScanAll(rows *sql.Rows) (ss []*%s, err error) {
 	return
 }%s`
 	for _, t := range a.Table {
-		names = name.UnderlineToPascal(*t.TableName)
+		names = UnderlineToPascal(*t.TableName)
 		scan = t.ColumnToScanString()
 		tmp.WriteString(fmt.Sprintf(one, names, names, names, scan, "\n"))
 		tmp.WriteString(fmt.Sprintf(all, names, names, names, scan, "\n"))
@@ -249,7 +375,7 @@ func (a *Table) QueryColumn(database string) (err error) {
 		}
 		return
 	}
-	err = mysql.Query(fc, "SELECT `TABLE_SCHEMA`, `TABLE_NAME`, `COLUMN_NAME`, `ORDINAL_POSITION`, `COLUMN_DEFAULT`, `IS_NULLABLE`, `DATA_TYPE`, `CHARACTER_MAXIMUM_LENGTH`, `CHARACTER_OCTET_LENGTH`, `NUMERIC_PRECISION`, `NUMERIC_SCALE`, `CHARACTER_SET_NAME`, `COLLATION_NAME`, `COLUMN_TYPE`, `COLUMN_KEY`, `EXTRA`, `COLUMN_COMMENT` FROM `information_schema`.`COLUMNS` WHERE ( `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? ) ORDER BY `ORDINAL_POSITION` ASC;", database, a.TableName)
+	err = Query(fc, "SELECT `TABLE_SCHEMA`, `TABLE_NAME`, `COLUMN_NAME`, `ORDINAL_POSITION`, `COLUMN_DEFAULT`, `IS_NULLABLE`, `DATA_TYPE`, `CHARACTER_MAXIMUM_LENGTH`, `CHARACTER_OCTET_LENGTH`, `NUMERIC_PRECISION`, `NUMERIC_SCALE`, `CHARACTER_SET_NAME`, `COLLATION_NAME`, `COLUMN_TYPE`, `COLUMN_KEY`, `EXTRA`, `COLUMN_COMMENT` FROM `information_schema`.`COLUMNS` WHERE ( `TABLE_SCHEMA` = ? AND `TABLE_NAME` = ? ) ORDER BY `ORDINAL_POSITION` ASC;", database, a.TableName)
 	return
 }
 
@@ -325,7 +451,7 @@ func (a *Table) ColumnToScanString() string {
 		if a.Column[i].ColumnName == nil {
 			continue
 		}
-		cs.WriteString(fmt.Sprintf("\t\t\t&s.%s,", name.UnderlineToPascal(strings.ToLower(*(a.Column[i].ColumnName)))))
+		cs.WriteString(fmt.Sprintf("\t\t\t&s.%s,", UnderlineToPascal(strings.ToLower(*(a.Column[i].ColumnName)))))
 		if i < length-1 {
 			cs.WriteString("\n")
 		}
@@ -425,98 +551,201 @@ func (c *Column) ColumnTypeToSetGoDefaultValue() (val string) {
 	return
 }
 
-func FmtGoFile(file string) error {
-	cmd := exec.Command("go", "fmt", file)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+// =====================================================================================================================
+// database mysql
+// =====================================================================================================================
+
+// db database object
+var db *sql.DB
+
+// ErrorTransactionNotOpened transaction not opened
+var ErrorTransactionNotOpened = errors.New("mysql: please open the transaction first")
+
+// Open connect to mysql service, auto set database connect; dsn: runner:112233@tcp(127.0.0.1:3306)/running?charset=utf8mb4&collation=utf8mb4_unicode_ci
+func Open(dsn string) (err error) {
+	db, err = sql.Open("mysql", dsn)
+	if err != nil {
+		return
+	}
+	db.SetConnMaxLifetime(time.Minute * 3)
+	db.SetMaxOpenConns(512)
+	db.SetMaxIdleConns(128)
+	return
 }
 
-func Write(username, password, host string, port int, dbname, charset, collation string) (err error) {
-	if con := mysql.Db1(); con == nil {
-		err = Open(fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&collation=%s", username, password, host, port, dbname, charset, collation))
-		if err != nil {
-			return
-		}
-	}
-	db := NewDatabase(dbname)
-	// 查询数据库的所有表
-	err = db.QueryTable()
-	if err != nil {
-		return
-	}
-	// 查询表的所有字段
-	for _, t := range db.Table {
-		err = t.QueryColumn(db.Name)
-		if err != nil {
-			return
-		}
-	}
-	var fer bytes.Buffer
-	var bts []byte
-	fer.WriteString(`
-package gdb
+func Db0(database *sql.DB) {
+	db = database
+}
 
-import (
-	"database/sql"
-)
+func Db1() *sql.DB {
+	return db
+}
 
-`)
-	bts, err = db.TemplateSql()
-	if err != nil {
+func Exec() *Execs {
+	return &Execs{
+		db: db,
+	}
+}
+
+func Query(anonymous func(rows *sql.Rows) (err error), prepare string, args ...interface{}) error {
+	return Exec().OneStepQuery(anonymous, prepare, args...)
+}
+
+func Execute(prepare string, args ...interface{}) (int64, error) {
+	return Exec().OneStepExecute(prepare, args...)
+}
+
+func AddOne(prepare string, args ...interface{}) (int64, error) {
+	return Exec().OneStepAddOne(prepare, args...)
+}
+
+func Transaction(times int, anonymous func(execs *Execs) (err error)) error {
+	return Exec().Transaction(times, anonymous)
+}
+
+// Execs mysql database sql statement execute object
+type Execs struct {
+	db      *sql.DB                          // database connection object
+	tx      *sql.Tx                          // database transaction object
+	prepare string                           // sql statement to be executed
+	args    []interface{}                    // executed sql parameters
+	scan    func(rows *sql.Rows) (err error) // scan query results
+}
+
+func (s *Execs) Begin() (err error) {
+	s.tx, err = s.db.Begin()
+	return
+}
+
+func (s *Execs) Rollback() (err error) {
+	if s.tx == nil {
+		err = ErrorTransactionNotOpened
 		return
+	}
+	err = s.tx.Rollback()
+	s.tx = nil
+	return
+}
+
+func (s *Execs) Commit() (err error) {
+	if s.tx == nil {
+		err = ErrorTransactionNotOpened
+		return
+	}
+	err = s.tx.Commit()
+	s.tx = nil
+	return
+}
+
+func (s *Execs) Scan(anonymous func(rows *sql.Rows) (err error)) *Execs {
+	s.scan = anonymous
+	return s
+}
+
+func (s *Execs) Prepare(prepare string) *Execs {
+	s.prepare = prepare
+	return s
+}
+
+func (s *Execs) Args(args ...interface{}) *Execs {
+	s.args = args
+	return s
+}
+
+func (s *Execs) Stmt() (stmt *sql.Stmt, err error) {
+	if s.tx != nil {
+		stmt, err = s.tx.Prepare(s.prepare)
 	} else {
-		fer.Write(bts)
-	}
-	bts, err = db.TemplateScan()
-	if err != nil {
-		return
-	} else {
-		fer.Write(bts)
-	}
-	bts, err = db.GoTypeTableStruct()
-	if err != nil {
-		return
-	} else {
-		fer.Write(bts)
-	}
-	var fil *os.File
-	fil, err = os.Create("db.go")
-	if err != nil {
-		return
-	}
-	defer fil.Close()
-	_, err = fil.Write(fer.Bytes())
-	if err != nil {
-		return
-	}
-	err = FmtGoFile("db.go")
-	if err != nil {
-		return
+		stmt, err = s.db.Prepare(s.prepare)
 	}
 	return
 }
 
-var username = flag.String("u", "root", "mysql username")
+func (s *Execs) FetchSql() (prepare string, args []interface{}) {
+	prepare, args = s.prepare, s.args
+	return
+}
 
-var password = flag.String("p", "", "mysql password")
-
-var host = flag.String("h", "127.0.0.1", "mysql host")
-
-var port = flag.Int("P", 3306, "mysql port")
-
-var database = flag.String("d", "", "mysql database")
-
-var charset = flag.String("c", "utf8mb4", "mysql charset")
-
-var collation = flag.String("l", "utf8mb4_unicode_ci", "mysql collation")
-
-func main() {
-	if !flag.Parsed() {
-		flag.Parse()
-	}
-	err := Write(*username, *password, *host, *port, *database, *charset, *collation)
+func (s *Execs) Query() (err error) {
+	var stmt *sql.Stmt
+	stmt, err = s.Stmt()
 	if err != nil {
-		fmt.Printf("%s\n", err.Error())
+		return
 	}
+	defer stmt.Close()
+	var rows *sql.Rows
+	rows, err = stmt.Query(s.args...)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	err = s.scan(rows)
+	return
+}
+
+func (s *Execs) Execute() (rowsAffected int64, err error) {
+	var stmt *sql.Stmt
+	stmt, err = s.Stmt()
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+	var result sql.Result
+	result, err = stmt.Exec(s.args...)
+	if err != nil {
+		return
+	}
+	rowsAffected, err = result.RowsAffected()
+	return
+}
+
+func (s *Execs) AddOne() (lastId int64, err error) {
+	var stmt *sql.Stmt
+	stmt, err = s.Stmt()
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+	var result sql.Result
+	result, err = stmt.Exec(s.args...)
+	if err != nil {
+		return
+	}
+	lastId, err = result.LastInsertId()
+	return
+}
+
+func (s *Execs) OneStepQuery(anonymous func(rows *sql.Rows) (err error), prepare string, args ...interface{}) (err error) {
+	err = s.Scan(anonymous).Prepare(prepare).Args(args...).Query()
+	return
+}
+
+func (s *Execs) OneStepExecute(prepare string, args ...interface{}) (int64, error) {
+	return s.Prepare(prepare).Args(args...).Execute()
+}
+
+func (s *Execs) OneStepAddOne(prepare string, args ...interface{}) (int64, error) {
+	return s.Prepare(prepare).Args(args...).AddOne()
+}
+
+// Transaction closure execute transaction, automatic rollback on error
+func (s *Execs) Transaction(times int, anonymous func(execs *Execs) (err error)) (err error) {
+	if times <= 0 {
+		err = fmt.Errorf("mysql: the number of transactions executed by the database has been used up")
+		return
+	}
+	for i := 0; i < times; i++ {
+		err = s.Begin()
+		if err != nil {
+			continue
+		}
+		err = anonymous(s)
+		if err != nil {
+			_ = s.Rollback()
+			continue
+		}
+		_ = s.Commit()
+		break
+	}
+	return
 }
